@@ -20,5 +20,5 @@ switch (selectedTool) {
     console.log('RELEASE TOOL SELECTED')
     break
   default:
-    console.log('NO TOOL SELECTED')
+    throw new Error('NO TOOL SELECTED')
 }
