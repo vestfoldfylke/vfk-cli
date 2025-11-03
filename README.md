@@ -40,10 +40,11 @@ Når det er klart for prod - gå til main-branch (husk en pull) og kjør en rele
 ## Tanker
 - Støtte for monorepo - f. eks at du får valg om hvilke ting som skal bumpes
 
-
-
 HVAAA om man jobber på 2 PR samtidig? Da er det vel bare førstemann til mølla, og vfk-cli må bli lei seg om man var sist.
 - Merk at hvis vi bruker versjon i PR tittel, så blir ikke den endra om man må endre det på nytt... Bruk feature name eller no fancy
+
+- Rune kjører en minor og jeg kjører en patch på samme tid. Rune dytter til main først.
+- Så kjører jeg pr patch. Får beskjed om at jeg er behind main, så jeg trekker inn koden til Rune. Jeg merger inn koden, så kjører jeg pr igjen. Fiksa ved å sjekke om project-version allerede er bumped en gang, og om den allerede er "stor nok"
 
 
 

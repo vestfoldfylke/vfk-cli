@@ -1,12 +1,3 @@
-/*
-Kjøre en kommando fra terminal - "PR" - patch, minor, major (kan sikkert ha noen flag og)
-
-- Den sjekker hva slags prosjekt du er i.
-- Sjekker at du er up-to-date med origin i current branch. Og at du ikke har masse endringer liggende som du har glemt. (med flag at du kan få lov)
-- Henter nyeste semver-tag samma hvor den kommer fra.
-- OPpretter en fancy lenke til ny PR som er klikkbar. (trykk og opprett PR - done) kanskje setter assigne og tags og sånt
-*/
-
 import z from "zod";
 import { commitAndPush, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest } from "../lib/git.js";
 import { getNextVersion, getProjectInfo, updateProjectVersion } from "../lib/semver.js";
@@ -15,9 +6,22 @@ import { ProjectInfo, NextVersion } from "../lib/types/zod.js";
 import { runTests } from "../lib/run-tests.js";
 import { clickableLink } from "../lib/clickable-link.js";
 
-const PR_TYPES = ['patch', 'minor', 'major'];
+const PR_TYPES = ['help', 'patch', 'minor', 'major'];
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const toolHelp = `
+  VFK Pull Request Tool
+
+  Usage:
+    vfk pr patch     Create a pull request for a patch release (bug fixes)
+    vfk pr minor     Create a pull request for a minor release (new features)
+    vfk pr major     Create a pull request for a major release (breaking changes)
+  
+  Description:
+    This tool helps you create a pull request for releasing new versions of your project.
+    It checks that your repository is clean and up-to-date, determines the next version
+    based on semantic versioning, updates the project files, commits the changes, and
+    provides a link to create the pull request on GitHub.
+`
 
 const PullRequestData = z.object({
   latestTag: z.string().nullable(),
@@ -26,8 +30,8 @@ const PullRequestData = z.object({
 });
 
 export const pr = async (...args) => {
-  if (args.length === 0 || !PR_TYPES.includes(args[0])) {
-    console.error('Please specify the type of PR: patch, minor, or major');
+  if (args.length === 0 || !PR_TYPES.includes(args[0]) || args[0] === 'help') {
+    console.log(toolHelp);
     process.exit(1);
   }
 
@@ -111,7 +115,7 @@ export const pr = async (...args) => {
   const prTitle = `PLACEHOLDER CREATE YOUR OWN TITLE`;
   const prBody = `PLACEHOLDER BODY\n\n Closes (change to #{issue_number} for automatic closing of issues) (add description of closing notes here)`;
 
-  const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${repoInfo.currentBranch}?expand=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`;
+  const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${repoInfo.currentBranch}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`;
 
   console.log(`Create your PR here: ${clickableLink(prLink)}`);
 }
