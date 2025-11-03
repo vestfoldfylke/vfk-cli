@@ -11,7 +11,7 @@ import z from "zod";
 import { commitAndPush, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest } from "../lib/git.js";
 import { getNextVersion, getProjectInfo, updateProjectVersion } from "../lib/semver.js";
 import yoctoSpinner from 'yocto-spinner';
-import { ProjectInfo, NextVersion } from "../types/zod.js";
+import { ProjectInfo, NextVersion } from "../lib/types/zod.js";
 import { runTests } from "../lib/run-tests.js";
 import { clickableLink } from "../lib/clickable-link.js";
 
