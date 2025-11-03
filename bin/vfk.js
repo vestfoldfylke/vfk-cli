@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import z from 'zod'
-import { pr } from '../tools/pr.js'
+import z from "zod"
+import { pr } from "../tools/pr.js"
 
 const usage = `vfk <command>
 
@@ -13,25 +13,25 @@ vfk help           display this help message
 `
 
 /** @typedef { z.infer<typeof Tool> } */
-const Tool = z.enum(['release', 'pr', 'help', ''])
+const Tool = z.enum(["release", "pr", "help", ""])
 
-const selectedTool = Tool.parse(process.argv[2] || '')
+const selectedTool = Tool.parse(process.argv[2] || "")
 
 const args = process.argv.slice(3)
 
 switch (selectedTool) {
-  case 'pr':
-    pr(...args)
-    break
-  case 'release':
-    console.log('RELEASE TOOL SELECTED')
-    break
-  case 'help':
-    console.log(usage)
-    break
-  case '':
-    console.log(usage)
-    break
-  default:
-    throw new Error('NO TOOL SELECTED')
+	case "pr":
+		pr(...args)
+		break
+	case "release":
+		console.log("RELEASE TOOL SELECTED")
+		break
+	case "help":
+		console.log(usage)
+		break
+	case "":
+		console.log(usage)
+		break
+	default:
+		throw new Error("NO TOOL SELECTED")
 }
