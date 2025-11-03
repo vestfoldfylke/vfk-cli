@@ -7,8 +7,8 @@ const usage = `vfk <command>
 
 Usage:
 
-vfk pr <type>      create a Github pull request of the specified type (patch, minor, major)
-vfk release        create a Github release with auto-release notes and tag from project version
+vfk pr <type>      create a GitHub pull request of the specified type (patch, minor, major)
+vfk release        create a GitHub release with auto-release notes and tag from project version
 vfk help           display this help message
 `
 
