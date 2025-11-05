@@ -179,7 +179,7 @@ export const pr = async (...args) => {
 	// Then we create a PR from a query link to GitHub with the right info filled in
 	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
 	// Create PR body based on all the commits in the branch
-	let prBody = ''
+	let prBody = ""
 	for (const [type, commits] of Object.entries(pullRequestData.sortedCommits)) {
 		if (commits && commits.length > 0) {
 			prBody += `\n### ${type.charAt(0).toUpperCase() + type.slice(1)} commits:\n`
