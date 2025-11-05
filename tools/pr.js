@@ -90,7 +90,7 @@ export const pr = async (...args) => {
 		const commitsSortedByType = sortCommitsByType(commitsInCurrentBranch)
 
 		// Determine the highest semver type present in the commits
-		const commitTypesByPriority = [...PR_TYPES_BY_PRIORITY, "maintenance"]
+		const commitTypesByPriority = [...PR_TYPES_BY_PRIORITY, "maintenance", "other"]
 		const highestCommitType = commitTypesByPriority.find((type) => commitsSortedByType[type] && commitsSortedByType[type].length > 0)
 
 		const requestedTypeIndex = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
