@@ -96,7 +96,7 @@ export const release = async (...args) => {
 			process.exit(1)
 		}
 	} catch (error) {
-		spinner.error(`Failed to get commits since latest tag: ${error.message}`)
+		spinner.error(`Failed to get commits: ${error.message}`)
 		process.exit(1)
 	}
 	spinner.success(`Found ${releaseData.commits.length} commit(s) since latest tag ${releaseData.latestTag}`)
