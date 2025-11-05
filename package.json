@@ -7,7 +7,8 @@
 	"scripts": {
 		"lint": "npx @biomejs/biome check",
 		"lint:fix": "npx @biomejs/biome check --write",
-		"test": "npm run lint && node --test"
+		"test": "npm run lint && node --test",
+		"test:node": "node --test"
 	},
 	"bin": {
 		"vfk": "./bin/vfk.js"
