@@ -32,7 +32,7 @@ const PullRequestData = z.object({
 	sortedCommits: SortedCommits.nullable()
 })
 
-export const pr = async (...args) => {
+export const pr = (...args) => {
 	if (args.length === 0 || args[0] === "help" || !PR_TYPES_BY_PRIORITY.includes(args[0])) {
 		console.log(toolHelp)
 		process.exit(1)
