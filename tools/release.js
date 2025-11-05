@@ -124,6 +124,7 @@ export const release = async (...args) => {
 	const releaseBody = releaseData.releaseNotes
 
 	const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
+	const releaseLinkText = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}...`
 
-	console.log(`Create your release here: ${clickableLink(releaseLink)}`)
+	console.log(`🚀 Create your release here: ${clickableLink(releaseLink, releaseLinkText)}`)
 }

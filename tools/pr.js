@@ -179,6 +179,6 @@ export const pr = async (...args) => {
 	const prBody = "PLACEHOLDER BODY\n\n Closes #{issue_number} - for automatic closing of issues : add description of closing notes here"
 
 	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`
-
-	console.log(`Create your PR here: ${clickableLink(prLink)}`)
+	const prLinkText = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1...`
+	console.log(`🪾 Create your PR here: ${clickableLink(prLink, prLinkText)}`)
 }
