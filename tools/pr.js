@@ -37,7 +37,7 @@ export const pr = async (...args) => {
 		process.exit(1)
 	}
 
-  /** @type {import("../lib/types").RepoInfo} */
+	/** @type {import("../lib/types/zod.js").RepoInfo} */
 	const repoInfo = getRepoInfo()
 	// yocto-spinner og yocto-colors
 	let spinner = yoctoSpinner({
@@ -51,7 +51,7 @@ export const pr = async (...args) => {
 	}
 	spinner.success("Repository is clean and up-to-date")
 
-	/** @type {import("../lib/types").PullRequestData} */
+	/** @type {PullRequestData} */
 	const pullRequestData = PullRequestData.parse({
 		semverType: args[0],
 		latestTag: null,
