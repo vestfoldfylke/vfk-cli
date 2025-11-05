@@ -1,12 +1,12 @@
 import yoctoSpinner from "yocto-spinner"
 import z from "zod"
 import { clickableLink } from "../lib/clickable-link.js"
-import { commitAndPush, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest } from "../lib/git.js"
+import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
 import { runTests } from "../lib/run-tests.js"
 import { getNextVersion, getProjectInfo, updateProjectVersion } from "../lib/semver.js"
 import { NextVersion, ProjectInfo } from "../lib/types/zod.js"
 
-const PR_TYPES = ["help", "patch", "minor", "major"]
+const PR_TYPES_BY_PRIORITY = ["major", "minor", "patch"]
 
 const toolHelp = `
   VFK Pull Request Tool
@@ -23,14 +23,16 @@ const toolHelp = `
     provides a link to create the pull request on GitHub.
 `
 
+/** @typedef {z.infer<typeof PullRequestData>} PullRequestData */
 const PullRequestData = z.object({
+	semverType: z.enum(["major", "minor", "patch"]),
 	latestTag: z.string().nullable(),
 	projectInfo: ProjectInfo.nullable(),
 	nextVersion: NextVersion.nullable()
 })
 
 export const pr = async (...args) => {
-	if (args.length === 0 || !PR_TYPES.includes(args[0]) || args[0] === "help") {
+	if (args.length === 0 || args[0] === "help" || !PR_TYPES_BY_PRIORITY.includes(args[0])) {
 		console.log(toolHelp)
 		process.exit(1)
 	}
@@ -48,7 +50,9 @@ export const pr = async (...args) => {
 	}
 	spinner.success("Repository is clean and up-to-date")
 
+	/** @type {PullRequestData} */
 	const pullRequestData = PullRequestData.parse({
+		semverType: args[0],
 		latestTag: null,
 		projectInfo: null,
 		nextVersion: null
@@ -72,6 +76,53 @@ export const pr = async (...args) => {
 	}
 	spinner.success("All tests passed")
 
+	// Get commits in current branch not in main/default branch - check that there are commits, and if semverType is present, check that it is not lower than the commit types
+	spinner = yoctoSpinner({ text: `Getting commits in branch ${repoInfo.currentBranch} not in ${repoInfo.defaultBranch}...` }).start()
+	try {
+		const commitsInCurrentBranch = getBranchSpecificCommits(repoInfo.currentBranch)
+		if (commitsInCurrentBranch.length === 0) {
+			spinner.error(`No commits found in branch ${repoInfo.currentBranch} that are not in ${repoInfo.defaultBranch}. Why do you want to create a PR with no new changes??? 🍕`)
+			process.exit(1)
+		}
+		spinner.success(`Found ${commitsInCurrentBranch.length} commits in branch ${repoInfo.currentBranch} not in ${repoInfo.defaultBranch}`)
+
+		spinner = yoctoSpinner({ text: "Analyzing commit types..." }).start()
+		const commitsSortedByType = sortCommitsByType(commitsInCurrentBranch)
+
+		// Determine the highest semver type present in the commits
+		const commitTypesByPriority = [...PR_TYPES_BY_PRIORITY, "maintenance", "other"]
+		const highestCommitType = commitTypesByPriority.find((type) => commitsSortedByType[type] && commitsSortedByType[type].length > 0)
+
+		const requestedTypeIndex = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
+		const highestTypeIndex = commitTypesByPriority.indexOf(highestCommitType)
+		if (highestTypeIndex < requestedTypeIndex) {
+			spinner.error(
+				`The requested PR type "${pullRequestData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
+			)
+			// List the commits beautifully-ish in the terminal
+			console.log(`Commits by type:`)
+			for (const type of commitTypesByPriority) {
+				if (commitsSortedByType[type] && commitsSortedByType[type].length > 0) {
+					console.log(`\n${type.toUpperCase()} COMMITS:`)
+					for (const commit of commitsSortedByType[type]) {
+						console.log(`- ${commit.subject} (${commit.hash})`)
+					}
+				}
+			}
+			process.exit(1)
+		}
+		// Check if there are commits that do not follow conventional commit types
+		if (commitsSortedByType.other.length > 0) {
+			yoctoSpinner().start().warning(`There are ${commitsSortedByType.other.length} commit(s) of type "other". Remember to prefix with conventional commit types for proper versioning.`)
+			// List out conventional commit types
+			console.log(`\t - Conventional commit types (suffix the type with : or - ) are: ${Object.values(conventionalCommitTypes).flat().join(", ")}`)
+		}
+	} catch (error) {
+		spinner.error(`Failed to get commits: ${error.message}`)
+		process.exit(1)
+	}
+	spinner.success(`Commits validated for PR type "${pullRequestData.semverType}"`)
+
 	spinner = yoctoSpinner({ text: "Finding latest release tag..." }).start()
 	try {
 		pullRequestData.latestTag = getLatestReleaseTag()
@@ -82,12 +133,12 @@ export const pr = async (...args) => {
 
 	spinner = yoctoSpinner({ text: "Determining next version..." }).start()
 	try {
-		pullRequestData.nextVersion = getNextVersion(pullRequestData.latestTag, pullRequestData.projectInfo, args[0])
+		pullRequestData.nextVersion = getNextVersion(pullRequestData.latestTag, pullRequestData.projectInfo, pullRequestData.semverType)
 	} catch (error) {
 		spinner.error(`Failed to determine next version: ${error.message}`)
 	}
 	spinner.success(
-		`Next version is ${pullRequestData.nextVersion.version} (determined from ${pullRequestData.nextVersion.source})${pullRequestData.nextVersion.isInitialRelease ? ", this is the initial release" : ""}`
+		`Next version is ${pullRequestData.nextVersion.version} (${pullRequestData.nextVersion.description})${pullRequestData.nextVersion.isInitialRelease ? ", this is the initial release" : ""}`
 	)
 
 	// If project version is different than next version, update project version
@@ -123,7 +174,7 @@ export const pr = async (...args) => {
 	}
 
 	// Then we create a PR from a query link to github with the right info filled in
-	const prTitle = "PLACEHOLDER CREATE YOUR OWN TITLE"
+	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
 	const prBody = "PLACEHOLDER BODY\n\n Closes (change to #{issue_number} for automatic closing of issues) (add description of closing notes here)"
 
 	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${repoInfo.currentBranch}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`
