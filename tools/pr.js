@@ -37,6 +37,7 @@ export const pr = async (...args) => {
 		process.exit(1)
 	}
 
+  /** @type {import("../lib/types").RepoInfo} */
 	const repoInfo = getRepoInfo()
 	// yocto-spinner og yocto-colors
 	let spinner = yoctoSpinner({
@@ -50,7 +51,7 @@ export const pr = async (...args) => {
 	}
 	spinner.success("Repository is clean and up-to-date")
 
-	/** @type {PullRequestData} */
+	/** @type {import("../lib/types").PullRequestData} */
 	const pullRequestData = PullRequestData.parse({
 		semverType: args[0],
 		latestTag: null,
@@ -141,7 +142,7 @@ export const pr = async (...args) => {
 		`Next version is ${pullRequestData.nextVersion.version} (${pullRequestData.nextVersion.description})${pullRequestData.nextVersion.isInitialRelease ? ", this is the initial release" : ""}`
 	)
 
-	// If project version is different than next version, update project version
+	// If project version is different from next version, update project version
 	if (pullRequestData.projectInfo.version !== pullRequestData.nextVersion.version) {
 		spinner = yoctoSpinner({
 			text: `Updating ${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} to ${pullRequestData.nextVersion.version}...`
@@ -173,7 +174,7 @@ export const pr = async (...args) => {
 		spinner.success()
 	}
 
-	// Then we create a PR from a query link to github with the right info filled in
+	// Then we create a PR from a query link to GitHub with the right info filled in
 	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
 	const prBody = "PLACEHOLDER BODY\n\n Closes (change to #{issue_number} for automatic closing of issues) (add description of closing notes here)"
 
