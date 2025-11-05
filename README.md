@@ -45,7 +45,3 @@ HVAAA om man jobber på 2 PR samtidig? Da er det vel bare førstemann til mølla
 
 - Rune kjører en minor og jeg kjører en patch på samme tid. Rune dytter til main først.
 - Så kjører jeg pr patch. Får beskjed om at jeg er behind main, så jeg trekker inn koden til Rune. Jeg merger inn koden, så kjører jeg pr igjen. Fiksa ved å sjekke om project-version allerede er bumped en gang, og om den allerede er "stor nok"
-
-
-
-

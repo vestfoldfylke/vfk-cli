@@ -2,6 +2,7 @@
 
 import z from "zod"
 import { pr } from "../tools/pr.js"
+import { release } from "../tools/release.js"
 
 const usage = `vfk <command>
 
@@ -24,7 +25,7 @@ switch (selectedTool) {
 		pr(...args)
 		break
 	case "release":
-		console.log("RELEASE TOOL SELECTED")
+		release(...args)
 		break
 	case "help":
 		console.log(usage)
