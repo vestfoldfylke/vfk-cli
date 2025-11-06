@@ -1,37 +1,38 @@
 {
-  "name": "@vestfoldfylke/vfk-cli",
-  "version": "1.0.1",
-  "description": "A command line interface for our pleasure",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "lint": "npx @biomejs/biome check",
-    "lint:fix": "npx @biomejs/biome check --write",
-    "test": "npm run lint && node --test",
-    "test:node": "node --test"
-  },
-  "bin": {
-    "vfk": "./bin/vfk.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vestfoldfylke/vfk-cli.git"
-  },
-  "keywords": [
-    "pleasure"
-  ],
-  "author": "jorgtho",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/vestfoldfylke/vfk-cli/issues"
-  },
-  "homepage": "https://github.com/vestfoldfylke/vfk-cli#readme",
-  "dependencies": {
-    "semver": "^7.7.3",
-    "yocto-spinner": "^1.0.0",
-    "zod": "^4.1.12"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.3"
-  }
+	"name": "@vestfoldfylke/vfk-cli",
+	"version": "1.0.1",
+	"description": "A command line interface for our pleasure",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"lint": "npx @biomejs/biome check",
+		"lint:fix": "npx @biomejs/biome check --write",
+		"test": "npm run lint && node --test",
+		"test:node": "node --test"
+	},
+	"bin": {
+		"vfk": "./bin/vfk.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vestfoldfylke/vfk-cli.git"
+	},
+	"keywords": [
+		"pleasure"
+	],
+	"author": "jorgtho",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/vestfoldfylke/vfk-cli/issues"
+	},
+	"homepage": "https://github.com/vestfoldfylke/vfk-cli#readme",
+	"dependencies": {
+		"semver": "^7.7.3",
+		"yocto-spinner": "^1.0.0",
+		"zod": "^4.1.12"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.3",
+		"@types/node": "^24.10.0"
+	}
 }

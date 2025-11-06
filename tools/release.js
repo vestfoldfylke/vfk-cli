@@ -30,7 +30,7 @@ const ReleaseData = z.object({
 	releaseNotes: z.string().nullable()
 })
 
-export const release = async (...args) => {
+export const release = (...args) => {
 	if (args[0] === "help") {
 		console.log(toolHelp)
 		process.exit(1)
@@ -119,11 +119,12 @@ export const release = async (...args) => {
 	}
 	spinner.success("Release notes generated")
 
-	// Then we create a PR from a query link to github with the right info filled in
+	// Then we create a PR from a query link to GitHub with the right info filled in
 	const releaseTitle = `Release ${releaseData.projectInfo.version}`
 	const releaseBody = releaseData.releaseNotes
 
 	const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
+	const releaseLinkText = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}...`
 
-	console.log(`Create your release here: ${clickableLink(releaseLink)}`)
+	console.log(`🚀 Create your release here: ${clickableLink(releaseLink, releaseLinkText)}`)
 }
