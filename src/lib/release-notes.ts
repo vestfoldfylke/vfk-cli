@@ -4,10 +4,11 @@ import { sortCommitsByType } from "./git.js"
 
 const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 
+type EmojisByType = {
+	[key in keyof SortedCommits]: string
+}
+
 export const generateCommitNotes = (sortedCommits: SortedCommits): string => {
-	type EmojisByType = {
-		[key in keyof SortedCommits]: string
-	}
 	const emojisByType: EmojisByType = {
 		major: "🚨",
 		minor: "✨",
