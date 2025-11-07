@@ -1,6 +1,6 @@
 import yoctoSpinner from "yocto-spinner"
-import { clickableLink } from "../lib/clickable-link.js"
 import { getCommitsSinceTag, getLatestReleaseTag, getRepoInfo, repoIsReadyForRelease } from "../lib/git.js"
+import { openUrl } from "../lib/open-url.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getProjectInfo, getSemverReleaseType } from "../lib/semver.js"
@@ -113,7 +113,6 @@ export const release = (...args: string[]) => {
 	const releaseBody = releaseData.releaseNotes
 
 	const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
-	const releaseLinkText = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}...`
 
-	console.log(`🚀 Create your release here: ${clickableLink(releaseLink, releaseLinkText)}`)
+	openUrl(releaseLink, "🚀 Create your release here if it did not open automatically")
 }

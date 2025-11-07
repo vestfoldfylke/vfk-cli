@@ -1,6 +1,6 @@
 import yoctoSpinner from "yocto-spinner"
-import { clickableLink } from "../lib/clickable-link.js"
 import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
+import { openUrl } from "../lib/open-url.js"
 import { runTests } from "../lib/run-tests.js"
 import { getNextVersion, getProjectInfo, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
 import type { GitCommitType, GitLogCommit } from "../types/git.js"
@@ -198,6 +198,5 @@ export const pr = (...args: string[]) => {
 	// const prBody = "PLACEHOLDER BODY\n\n Closes #{issue_number} - for automatic closing of issues : add description of closing notes here"
 
 	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`
-	const prLinkText = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1...`
-	console.log(`🪾 Create your PR here: ${clickableLink(prLink, prLinkText)}`)
+	openUrl(prLink, "🪾 Create your PR here if it did not open automatically")
 }
