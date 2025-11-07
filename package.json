@@ -1,17 +1,18 @@
 {
 	"name": "@vestfoldfylke/vfk-cli",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"description": "A command line interface for our pleasure",
-	"main": "index.js",
+	"main": "dist/index.js",
 	"type": "module",
 	"scripts": {
+		"build": "tsc",
 		"lint": "npx @biomejs/biome check",
 		"lint:fix": "npx @biomejs/biome check --write",
-		"test": "npm run lint && node --test",
+		"test": "tsc --noEmit && biome check && node --import tsx --test src/tests/**/*.test.ts",
 		"test:node": "node --test"
 	},
 	"bin": {
-		"vfk": "./bin/vfk.js"
+		"vfk": "./dist/index.js"
 	},
 	"repository": {
 		"type": "git",
@@ -28,11 +29,13 @@
 	"homepage": "https://github.com/vestfoldfylke/vfk-cli#readme",
 	"dependencies": {
 		"semver": "^7.7.3",
-		"yocto-spinner": "^1.0.0",
-		"zod": "^4.1.12"
+		"yocto-spinner": "^1.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.3",
-		"@types/node": "^24.10.0"
+		"@types/node": "^24.10.0",
+		"@types/semver": "^7.7.1",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3"
 	}
 }

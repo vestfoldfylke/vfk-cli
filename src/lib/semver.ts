@@ -2,21 +2,17 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import semver from "semver"
-import { ProjectInfo, ReleaseTypes } from "./types/zod.js"
+import type { NextVersion, ProjectInfo, ReleaseType } from "../types/semver.js"
+import type { SupportedSemverType } from "../types/tools.js"
 
-/**
- * @param {string[]} tags
- * @returns {?string}
- */
-export const getLatestSemverTag = (tags) => {
+export const SUPPORTED_SEMVER_TYPES_BY_PRIORITY: SupportedSemverType[] = ["major", "minor", "patch"]
+
+export const getLatestSemverTag = (tags: string[]): string | null => {
 	const semverTags = tags.filter((tag) => semver.valid(tag))
 	return semver.maxSatisfying(semverTags, "*", { includePrerelease: true })
 }
 
-/**
- * @returns {import('./types/zod.js').ProjectInfo}
- */
-export const getProjectInfo = () => {
+export const getProjectInfo = (): ProjectInfo => {
 	// Read project version from relevant file based on project type
 	// Node.js - package.json
 	if (existsSync("./package.json")) {
@@ -25,8 +21,11 @@ export const getProjectInfo = () => {
 		if (existsSync("./package-lock.json")) {
 			paths.push("./package-lock.json")
 		}
+		if (!semver.valid(pkg.version)) {
+			throw new Error(`Invalid semver version in package.json: ${pkg.version}, please fix it manually before proceeding...`)
+		}
 		return {
-			version: semver.valid(pkg.version),
+			version: pkg.version,
 			type: "node",
 			paths
 		}
@@ -47,11 +46,14 @@ export const getProjectInfo = () => {
 		if (versions.length > 1) {
 			throw new Error("Multiple .csproj files with version tag found in solution.")
 		}
-		if (versions.length === 0) {
+		if (!versions[0]) {
 			throw new Error("No <Version> tag found in any .csproj file.")
 		}
+		if (!semver.valid(versions[0].version)) {
+			throw new Error(`Invalid semver version in ${versions[0].path}: ${versions[0].version}, please fix it manually before proceeding...`)
+		}
 		return {
-			version: semver.valid(versions[0].version),
+			version: versions[0].version as string, // We know it's defined here, as semver.valid passed
 			type: "dotnet",
 			paths: [versions[0].path]
 		}
@@ -60,27 +62,14 @@ export const getProjectInfo = () => {
 	throw new Error("Unsupported project type for version retrieval.")
 }
 
-/**
- *
- * @param {string} semver1
- * @param {string} semver2
- * @returns {boolean}
- */
-const hasBeenIncreasedOneTime = (semver1, semver2) => {
+const hasBeenIncreasedOneTime = (semver1: string, semver2: string) => {
 	const diffType = semver.diff(semver1, semver2) // 'major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease' or null
 	if (!diffType) return false
 	const incrementedVersion = semver.inc(semver1, diffType)
 	return incrementedVersion === semver2
 }
 
-/**
- * Checks if the project version has already been bumped from the latest tag, and is greater than current bump from latest tag.
- * @param {string} latestTag
- * @param {string} projectVersion
- * @param {'patch' | 'minor' | 'major'} releaseType
- * @returns {boolean}
- */
-export const useExistingProjectVersion = (latestTag, projectVersion, releaseType) => {
+export const useExistingProjectVersion = (latestTag: string, projectVersion: string, releaseType: SupportedSemverType): boolean => {
 	if (!semver.valid(latestTag) || !semver.valid(projectVersion)) {
 		return false
 	}
@@ -88,7 +77,7 @@ export const useExistingProjectVersion = (latestTag, projectVersion, releaseType
 		return false
 	}
 
-	return !semver.lt(projectVersion, semver.inc(latestTag, releaseType))
+	return !semver.lt(projectVersion, semver.inc(latestTag, releaseType) as string) // We already checked that both projectVersion and latestTag are valid above
 }
 
 /**
@@ -96,24 +85,14 @@ export const useExistingProjectVersion = (latestTag, projectVersion, releaseType
  * Finds the next version based on latest tag and project version.
  * If project version is already sufficiently increased from latest tag, it will be used (and not increased again).
  * Favors the latest semver tag, and fallbacks to project version if semver tag is not present.
- *
- * @param {?string} latestTag
- * @param {ProjectInfo} projectInfo
- * @param {'patch' | 'minor' | 'major'} releaseType
- * @returns {import('./types/zod.js').NextVersion}
  */
-export const getNextVersion = (latestTag, projectInfo, releaseType) => {
+export const getNextVersion = (latestTag: string | null, projectInfo: ProjectInfo, releaseType: SupportedSemverType): NextVersion => {
 	if (!semver.valid(projectInfo.version) && !semver.valid(latestTag)) {
-		return {
-			version: "1.0.0",
-			isInitialRelease: true,
-			source: "vfk-cli",
-			description: "No valid latest tag or project version found, starting from 1.0.0"
-		}
+		throw new Error("No valid version found from latest tag or project version.")
 	}
 	if (latestTag && semver.valid(latestTag)) {
 		// Check if project version already has been bumped one time from latest tag - if so, someone else has already merged to main before the release
-		if (semver.valid(projectInfo.version) && useExistingProjectVersion(latestTag, projectInfo.version, releaseType)) {
+		if (projectInfo.version && semver.valid(projectInfo.version) && useExistingProjectVersion(latestTag, projectInfo.version, releaseType)) {
 			return {
 				version: projectInfo.version,
 				isInitialRelease: false,
@@ -122,7 +101,7 @@ export const getNextVersion = (latestTag, projectInfo, releaseType) => {
 			}
 		}
 		return {
-			version: semver.inc(latestTag, releaseType),
+			version: semver.inc(latestTag, releaseType) as string,
 			isInitialRelease: false,
 			source: "tag",
 			description: `Increased ${releaseType} from latest tag ${latestTag}`
@@ -130,23 +109,16 @@ export const getNextVersion = (latestTag, projectInfo, releaseType) => {
 	}
 	const isInitialRelease = projectInfo.version === "1.0.0"
 	return {
-		version: isInitialRelease ? "1.0.0" : semver.inc(projectInfo.version, releaseType),
+		version: isInitialRelease ? "1.0.0" : (semver.inc(projectInfo.version as string, releaseType) as string), // We also know that projectInfo.version is valid here
 		isInitialRelease,
 		source: "project",
 		description: `No valid latest tag found, using project version as base`
 	}
 }
 
-/**
- *
- * @param {ProjectInfo} projectInfo
- * @param {string} newVersion
- * @return {void}
- */
-export const updateProjectVersion = (projectInfo, newVersion) => {
-	projectInfo = ProjectInfo.parse(projectInfo)
+export const updateProjectVersion = (projectInfo: ProjectInfo, newVersion: string): void => {
 	if (!semver.valid(newVersion)) {
-		throw new Error(`Invalid semver version: ${newVersion}`)
+		throw new Error(`Invalid semver version for new version: ${newVersion}`)
 	}
 	switch (projectInfo.type) {
 		case "node": {
@@ -171,17 +143,11 @@ export const updateProjectVersion = (projectInfo, newVersion) => {
 	}
 }
 
-/**
- *
- * @param {string} latestTag
- * @param {import('./types/zod.js').ProjectInfo} projectInfo
- * @returns {import('./types/zod.js').ReleaseTypes}
- */
-export const getSemverReleaseType = (latestTag, projectInfo) => {
-	if (!semver.valid(projectInfo.version)) {
+export const getSemverReleaseType = (latestTag: string | null, projectInfo: ProjectInfo): ReleaseType => {
+	if (!projectInfo.version || !semver.valid(projectInfo.version)) {
 		throw new Error("Cannot determine semver type without a valid project version. Please fix it manually.")
 	}
-	if (!semver.valid(latestTag)) {
+	if (!latestTag || !semver.valid(latestTag)) {
 		return "initial-release"
 	}
 	if (!hasBeenIncreasedOneTime(latestTag, projectInfo.version)) {
@@ -191,5 +157,8 @@ export const getSemverReleaseType = (latestTag, projectInfo) => {
 	if (!semverType) {
 		throw new Error("Cannot determine semver type from latest tag and project version. Please fix it manually.")
 	}
-	return ReleaseTypes.parse(semverType)
+	if (!SUPPORTED_SEMVER_TYPES_BY_PRIORITY.includes(semverType as SupportedSemverType)) {
+		throw new Error(`Unsupported semver difference type: ${semverType}. Must be one of ${SUPPORTED_SEMVER_TYPES_BY_PRIORITY.join(", ")}. Please fix it manually.`)
+	}
+	return semverType as ReleaseType
 }

@@ -1,8 +1,8 @@
 import { execSync } from "node:child_process"
+import type { GitLogCommit, RepoInfo, SortedCommits } from "../types/git.js"
 import { getLatestSemverTag } from "./semver.js"
-import { GitLogCommits, RepoInfo, SortedCommits } from "./types/zod.js"
 
-const runGitCommand = (command) => {
+const runGitCommand = (command: string) => {
 	if (typeof command !== "string" || !command.startsWith("git ")) {
 		throw new Error("Command must be string and only git commands are allowed")
 	}
@@ -10,7 +10,7 @@ const runGitCommand = (command) => {
 		const res = execSync(command)
 		return res.toString()
 	} catch (err) {
-		if (err.message.includes("Not a git repository")) {
+		if (err instanceof Error && err.message.includes("Not a git repository")) {
 			throw new Error("Directory is not a Git repository")
 		}
 		throw err
@@ -38,6 +38,9 @@ export const getCommitsBehindAndAheadDefaultBranch = () => {
 	const defaultBranch = getDefaultBranch()
 	const diff = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`).trim()
 	const [behind, ahead] = diff.split("\t")
+	if (!behind || !ahead) {
+		throw new Error("Could not determine commit difference between current branch and default branch")
+	}
 	return { behind: parseInt(behind, 10), ahead: parseInt(ahead, 10) }
 }
 
@@ -46,13 +49,7 @@ export const getLatestReleaseTag = () => {
 	return getLatestSemverTag(tags)
 }
 
-/**
- *
- * @param {RepoInfo} repoInfo
- * @returns {void}
- */
-export const repoIsReadyForPullRequest = (repoInfo) => {
-	repoInfo = RepoInfo.parse(repoInfo)
+export const repoIsReadyForPullRequest = (repoInfo: RepoInfo) => {
 	if (repoInfo.currentBranch === repoInfo.defaultBranch) {
 		throw new Error("You are currently on the default branch. Please switch to a feature branch to create a PR.")
 	}
@@ -66,13 +63,7 @@ export const repoIsReadyForPullRequest = (repoInfo) => {
 	}
 }
 
-/**
- * Simply throws errors if repo is not clean and up to date, or not on default branch
- * @param {RepoInfo} repoInfo
- * @returns {void}
- */
-export const repoIsReadyForRelease = (repoInfo) => {
-	repoInfo = RepoInfo.parse(repoInfo)
+export const repoIsReadyForRelease = (repoInfo: RepoInfo) => {
 	if (repoInfo.currentBranch !== repoInfo.defaultBranch) {
 		throw new Error(`You are currently on branch ${repoInfo.currentBranch}. Please switch to the default branch (${repoInfo.defaultBranch}) to create a release.`)
 	}
@@ -81,11 +72,7 @@ export const repoIsReadyForRelease = (repoInfo) => {
 	}
 }
 
-/**
- *
- * @returns {RepoInfo}
- */
-export const getRepoInfo = () => {
+export const getRepoInfo = (): RepoInfo => {
 	const remoteUrl = runGitCommand("git config --get remote.origin.url").trim()
 	if (!(remoteUrl.startsWith("git@github.com:") || remoteUrl.startsWith("https://github.com/"))) {
 		throw new Error("Repository is not a GitHub repository. VFK CLI only supports GitHub for PR creation.")
@@ -109,88 +96,77 @@ export const getRepoInfo = () => {
 	}
 }
 
-export const commitAndPush = (message) => {
+export const commitAndPush = (message: string) => {
 	runGitCommand("git add .")
 	runGitCommand(`git commit -m "${message}"`)
 	const currentBranch = getCurrentBranch()
 	runGitCommand(`git push origin ${currentBranch} --quiet`)
 }
 
-/**
- *
- * @param {string} rawLog
- * @param {string} commitSeparator
- * @param {string} propertySeparator
- * @param {string[]} propertyNamesInOrder
- * @returns {Array<Object>}
- */
-export const parseGitLogs = (rawLog, commitSeparator, propertySeparator, propertyNamesInOrder) => {
-	const entries = rawLog.split(commitSeparator).filter((entry) => entry.trim() !== "")
+const commitSeparator = "%x00ENDOFCOMMIT%x00" // Nul-character as separator, as it is not allowed in commit messages
+const prettyFormat = `%h%x00%an%x00%ae%x00%s%x00%b%x00%ad${commitSeparator}`
 
-	return entries.map((entry) => {
-		const properties = entry.split(propertySeparator)
-		if (properties.length < propertyNamesInOrder.length) {
-			throw new Error("You are asking for more properties than available in git log output... check the separators or your code?")
+const prettyPropertyNamesInOrder = ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]
+const commitOutputSeparator = "\x00ENDOFCOMMIT\x00\n" // add newline after commit separator to also remove the newlines after each new commit line from git log
+const commitPropertySeparator = "\x00"
+
+export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
+	const commitEntries = rawLog.split(commitOutputSeparator).filter((entry) => entry.trim() !== "")
+
+	return commitEntries.map((entry) => {
+		const properties = entry.split(commitPropertySeparator)
+		if (properties.length < prettyPropertyNamesInOrder.length) {
+			throw new Error("Pretty format and property names length mismatch, check prettyFormat and property names array (that they have same number of properties, and in same order)")
 		}
-		const commit = {}
-		propertyNamesInOrder.forEach((propName, index) => {
-			commit[propName] = properties[index]
-		})
+		const commit = {
+			hash: properties[0] as string,
+			authorName: properties[1] as string,
+			authorEmail: properties[2] as string,
+			subject: properties[3] as string,
+			body: properties[4] as string,
+			commitDate: properties[5] as string
+		}
 		return commit
 	})
 }
 
-const commitSeparator = "%x00ENDOFCOMMIT%x00" // Nul-character as separator, as it is not allowed in commit messages
-const prettyFormat = `%h%x00%an%x00%ae%x00%s%x00%b%x00%ad${commitSeparator}`
-const commitOutputSeparator = "\x00ENDOFCOMMIT\x00\n" // add newline after commit separator to also remove the newlines after each new commit line from git log
-
-/**
- * If tagOrCommitHash is null or undefined, gets all commits
- * @param {?string} [tagOrCommitHash]
- */
-export const getCommitsSinceTag = (tagOrCommitHash) => {
+export const getCommitsSinceTag = (tagOrCommitHash: string | null | undefined): GitLogCommit[] => {
 	const log = tagOrCommitHash
 		? runGitCommand(`git log --pretty=format:'${prettyFormat}' ${tagOrCommitHash}..HEAD --date=iso-strict`).trim()
 		: runGitCommand(`git log --pretty=format:'${prettyFormat}' --date=iso-strict`).trim()
 	if (!log) {
 		return []
 	}
-	return GitLogCommits.parse(parseGitLogs(log, commitOutputSeparator, "\x00", ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]))
+	return parseGitLogs(log)
 }
 
-export const getBranchSpecificCommits = (branchName) => {
+export const getBranchSpecificCommits = (branchName: string): GitLogCommit[] => {
 	const defaultBranch = getDefaultBranch()
 	const log = runGitCommand(`git log --pretty=format:'${prettyFormat}' origin/${defaultBranch}..${branchName} --date=iso-strict`).trim()
 	if (!log) {
 		return []
 	}
-	return GitLogCommits.parse(parseGitLogs(log, commitOutputSeparator, "\x00", ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]))
+	return parseGitLogs(log)
 }
 
 /**
  * Maps semantic versioning release types to arrays of conventional commit keywords.
- *
- * @typedef {Object} ConventionalCommitTypes
- * @property {string[]} major - Keywords indicating a major release (breaking changes).
- * @property {string[]} minor - Keywords indicating a minor release (new features, non-breaking).
- * @property {string[]} patch - Keywords indicating a patch release (bug fixes, performance improvements).
- * @property {string[]} maintenance - Keywords for maintenance tasks (tests, style, docs, chores, refactoring).
- *
  */
+type ConventionalCommitTypes = {
+	major: string[]
+	minor: string[]
+	patch: string[]
+	maintenance: string[]
+}
 
-/** @type {ConventionalCommitTypes} */
-export const conventionalCommitTypes = {
+export const conventionalCommitTypes: ConventionalCommitTypes = {
 	major: ["breaking change", "breaking", "major", "feat!", "fix!"],
 	minor: ["feat", "minor"],
 	patch: ["fix", "perf", "patch"],
 	maintenance: ["test", "style", "docs", "chore", "refactor"]
 }
 
-/**
- * @param {string} message
- * @returns {'major' | 'minor' | 'patch' | 'maintenance' | 'other'}
- */
-const getCommitType = (message) => {
+const getCommitType = (message: string): "major" | "minor" | "patch" | "maintenance" | "other" => {
 	message = message.trim().toLowerCase()
 	for (const [type, keywords] of Object.entries(conventionalCommitTypes)) {
 		for (const keyword of keywords) {
@@ -205,13 +181,8 @@ const getCommitType = (message) => {
 	return "other"
 }
 
-/**
- * Sorts commits by type (patch, minor, major, maintenance, other0), and date descending within each type
- * @param {import('./types/zod.js').GitLogCommits} commits
- * @returns {SortedCommits}
- */
-export const sortCommitsByType = (commits) => {
-	const sorted = {
+export const sortCommitsByType = (commits: GitLogCommit[]): SortedCommits => {
+	const sorted: SortedCommits = {
 		major: [],
 		minor: [],
 		patch: [],
@@ -223,7 +194,7 @@ export const sortCommitsByType = (commits) => {
 		sorted[type].push(commit)
 	}
 	// Sort all arrays by commit date descending
-	for (const key of Object.keys(sorted)) {
+	for (const key of Object.keys(sorted) as (keyof SortedCommits)[]) {
 		sorted[key] = sorted[key].sort((a, b) => b.commitDate.localeCompare(a.commitDate))
 	}
 	return sorted

@@ -1,7 +1,7 @@
 import assert from "node:assert"
 import { describe, it } from "node:test"
-
-import { getLatestSemverTag, getNextVersion, useExistingProjectVersion } from "../../lib/semver.js"
+import { getLatestSemverTag, getNextVersion, useExistingProjectVersion } from "../lib/semver.js"
+import type { ProjectInfo } from "../types/semver.js"
 
 describe("getLatestSemverTag", () => {
 	it("should return the latest semver tag", () => {
@@ -14,8 +14,7 @@ describe("getLatestSemverTag", () => {
 describe("getNextVersion", () => {
 	it("should calculate the next version correctly if project is already increased", () => {
 		const latestTag = "1.2.3"
-		/** @type {import('../../lib/types/zod.js').ProjectInfo} */
-		const projectInfo = {
+		const projectInfo: ProjectInfo = {
 			version: "1.2.4",
 			type: "node",
 			paths: ["./package.json"]
@@ -29,8 +28,7 @@ describe("getNextVersion", () => {
 	})
 	it("should calculate the next version correctly if project is behind latest tag", () => {
 		const latestTag = "2.0.0"
-		/** @type {import('../../lib/types/zod.js').ProjectInfo} */
-		const projectInfo = {
+		const projectInfo: ProjectInfo = {
 			version: "1.5.0",
 			type: "node",
 			paths: ["./package.json"]
@@ -42,25 +40,23 @@ describe("getNextVersion", () => {
 		assert.strictEqual(nextVersion.source, "tag")
 		assert.strictEqual(nextVersion.isInitialRelease, false)
 	})
-	it("should return initial version if no valid versions exist", () => {
+	it("should throw if no valid versions exist", () => {
 		const latestTag = null
-		/** @type {import('../../lib/types/zod.js').ProjectInfo} */
-		const projectInfo = {
+		const projectInfo: ProjectInfo = {
+			// @ts-expect-error Testing invalid version
 			version: null,
 			type: "node",
 			paths: ["./package.json"]
 		}
 		const releaseType = "major"
 
-		const nextVersion = getNextVersion(latestTag, projectInfo, releaseType)
-		assert.strictEqual(nextVersion.version, "1.0.0")
-		assert.strictEqual(nextVersion.source, "vfk-cli")
-		assert.strictEqual(nextVersion.isInitialRelease, true)
+		assert.throws(() => {
+			getNextVersion(latestTag, projectInfo, releaseType)
+		}, /No valid version found/)
 	})
 	it("should use tag if tag and project version are the same", () => {
 		const latestTag = "1.0.0"
-		/** @type {import('../../lib/types/zod.js').ProjectInfo} */
-		const projectInfo = {
+		const projectInfo: ProjectInfo = {
 			version: "1.0.0",
 			type: "node",
 			paths: ["./package.json"]
@@ -74,8 +70,7 @@ describe("getNextVersion", () => {
 	})
 	it("should return 1.0.0 and mark as initial release if project version is 1.0.0 and no tags exist", () => {
 		const latestTag = null
-		/** @type {import('../../lib/types/zod.js').ProjectInfo} */
-		const projectInfo = {
+		const projectInfo: ProjectInfo = {
 			version: "1.0.0",
 			type: "node",
 			paths: ["./package.json"]
