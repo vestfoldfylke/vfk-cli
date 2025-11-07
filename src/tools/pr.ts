@@ -1,12 +1,10 @@
 import yoctoSpinner from "yocto-spinner"
-import z from "zod"
 import { clickableLink } from "../lib/clickable-link.js"
 import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
 import { runTests } from "../lib/run-tests.js"
-import { getNextVersion, getProjectInfo, updateProjectVersion } from "../lib/semver.js"
-import { NextVersion, ProjectInfo, SortedCommits } from "../lib/types/zod.js"
-
-const PR_TYPES_BY_PRIORITY = ["major", "minor", "patch"]
+import { getNextVersion, getProjectInfo, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
+import type { GitCommitType, GitLogCommit } from "../types/git.js"
+import type { PullRequestData, SupportedSemverType } from "../types/tools.js"
 
 const toolHelp = `
   VFK Pull Request Tool
@@ -23,23 +21,14 @@ const toolHelp = `
     provides a link to create the pull request on GitHub.
 `
 
-/** @typedef {z.infer<typeof PullRequestData>} PullRequestData */
-const PullRequestData = z.object({
-	semverType: z.enum(["major", "minor", "patch"]),
-	latestTag: z.string().nullable(),
-	projectInfo: ProjectInfo.nullable(),
-	nextVersion: NextVersion.nullable(),
-	sortedCommits: SortedCommits.nullable()
-})
-
-export const pr = (...args) => {
-	if (args.length === 0 || args[0] === "help" || !PR_TYPES_BY_PRIORITY.includes(args[0])) {
+export const pr = (...args: string[]) => {
+	if (args.length === 0 || args[0] === "help" || !SUPPORTED_SEMVER_TYPES_BY_PRIORITY.includes(args[0] as SupportedSemverType)) {
 		console.log(toolHelp)
 		process.exit(1)
 	}
 
-	/** @type {import("../lib/types/zod.js").RepoInfo} */
 	const repoInfo = getRepoInfo()
+
 	// yocto-spinner og yocto-colors
 	let spinner = yoctoSpinner({
 		text: "Checking if repo is clean and up-to-date..."
@@ -47,25 +36,30 @@ export const pr = (...args) => {
 	try {
 		repoIsReadyForPullRequest(repoInfo)
 	} catch (error) {
-		spinner.error(`Repository is not ready for PR: ${error.message}`)
+		spinner.error(`Repository is not ready for PR: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success("Repository is clean and up-to-date")
 
-	/** @type {PullRequestData} */
-	const pullRequestData = PullRequestData.parse({
-		semverType: args[0],
+	const pullRequestData: PullRequestData = {
+		semverType: args[0] as SupportedSemverType,
 		latestTag: null,
 		projectInfo: null,
 		nextVersion: null,
 		sortedCommits: null
-	})
+	}
 
 	spinner = yoctoSpinner({ text: "Getting project info..." }).start()
 	try {
 		pullRequestData.projectInfo = getProjectInfo()
 	} catch (error) {
-		spinner.error(`Failed to get project info: ${error.message}`)
+		const errorMessage = error instanceof Error ? error.message : String(error)
+		spinner.error(`Failed to get project info: ${errorMessage}`)
+		process.exit(1)
+	}
+	if (!pullRequestData.projectInfo) {
+		spinner.error("Project info is null??? Contact idiot-developers.")
+		process.exit(1)
 	}
 	spinner.success(`Project version is ${pullRequestData.projectInfo.version} (${pullRequestData.projectInfo.type})`)
 
@@ -74,7 +68,8 @@ export const pr = (...args) => {
 	try {
 		runTests(pullRequestData.projectInfo)
 	} catch (error) {
-		spinner.error(`Tests failed, please fix the errors before you create a PR: ${error.message}`)
+		const errorMessage = error instanceof Error ? error.message : String(error)
+		spinner.error(`Tests failed, please fix the errors before you create a PR: ${errorMessage}`)
 		process.exit(1)
 	}
 	spinner.success("All tests passed")
@@ -82,7 +77,7 @@ export const pr = (...args) => {
 	// Get commits in current branch not in main/default branch - check that there are commits, and if semverType is present, check that it is not lower than the commit types
 	spinner = yoctoSpinner({ text: `Getting commits in branch ${repoInfo.currentBranch} not in ${repoInfo.defaultBranch}...` }).start()
 	try {
-		const commitsInCurrentBranch = getBranchSpecificCommits(repoInfo.currentBranch)
+		const commitsInCurrentBranch: GitLogCommit[] = getBranchSpecificCommits(repoInfo.currentBranch)
 		if (commitsInCurrentBranch.length === 0) {
 			spinner.error(`No commits found in branch ${repoInfo.currentBranch} that are not in ${repoInfo.defaultBranch}. Why do you want to create a PR with no new changes??? 🍕`)
 			process.exit(1)
@@ -91,10 +86,19 @@ export const pr = (...args) => {
 
 		spinner = yoctoSpinner({ text: "Analyzing commit types..." }).start()
 		pullRequestData.sortedCommits = sortCommitsByType(commitsInCurrentBranch)
+		if (!pullRequestData.sortedCommits) {
+			spinner.error("Sorted commits is null??? Contact idiot-developers.")
+			process.exit(1)
+		}
 
 		// Determine the highest semver type present in the commits
-		const commitTypesByPriority = [...PR_TYPES_BY_PRIORITY, "maintenance", "other"]
-		const highestCommitType = commitTypesByPriority.find((type) => pullRequestData.sortedCommits[type] && pullRequestData.sortedCommits[type].length > 0)
+		const commitTypesByPriority: GitCommitType[] = [...SUPPORTED_SEMVER_TYPES_BY_PRIORITY, "maintenance", "other"]
+
+		const highestCommitType = commitTypesByPriority.find((type) => pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0)
+		if (!highestCommitType) {
+			spinner.error("No commit types found. Probably no commits at all, but we already checked that??? Contact idiot-developers.")
+			process.exit(1)
+		}
 
 		const requestedTypeIndex = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
 		const highestTypeIndex = commitTypesByPriority.indexOf(highestCommitType)
@@ -105,7 +109,7 @@ export const pr = (...args) => {
 			// List the commits beautifully-ish in the terminal
 			console.log(`Commits by type:`)
 			for (const type of commitTypesByPriority) {
-				if (pullRequestData.sortedCommits[type] && pullRequestData.sortedCommits[type].length > 0) {
+				if (pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0) {
 					console.log(`\n${type.toUpperCase()} COMMITS:`)
 					for (const commit of pullRequestData.sortedCommits[type]) {
 						console.log(`- ${commit.subject} (${commit.hash})`)
@@ -121,7 +125,7 @@ export const pr = (...args) => {
 			console.log(`\t - Conventional commit types (suffix the type with : or - ) are: ${Object.values(conventionalCommitTypes).flat().join(", ")}`)
 		}
 	} catch (error) {
-		spinner.error(`Failed to get commits: ${error.message}`)
+		spinner.error(`Failed to get commits: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success(`Commits validated for PR type "${pullRequestData.semverType}"`)
@@ -130,7 +134,8 @@ export const pr = (...args) => {
 	try {
 		pullRequestData.latestTag = getLatestReleaseTag()
 	} catch (error) {
-		spinner.error(`Failed to get latest release tag: ${error.message}`)
+		spinner.error(`Failed to get latest release tag: ${error instanceof Error ? error.message : String(error)}`)
+		process.exit(1)
 	}
 	spinner.success(pullRequestData.latestTag ? `Latest release tag is ${pullRequestData.latestTag}` : "No release tags found, will use project version or start from 1.0.0")
 
@@ -138,7 +143,8 @@ export const pr = (...args) => {
 	try {
 		pullRequestData.nextVersion = getNextVersion(pullRequestData.latestTag, pullRequestData.projectInfo, pullRequestData.semverType)
 	} catch (error) {
-		spinner.error(`Failed to determine next version: ${error.message}`)
+		spinner.error(`Failed to determine next version: ${error instanceof Error ? error.message : String(error)}`)
+		process.exit(1)
 	}
 	spinner.success(
 		`Next version is ${pullRequestData.nextVersion.version} (${pullRequestData.nextVersion.description})${pullRequestData.nextVersion.isInitialRelease ? ", this is the initial release" : ""}`
@@ -152,7 +158,7 @@ export const pr = (...args) => {
 		try {
 			updateProjectVersion(pullRequestData.projectInfo, pullRequestData.nextVersion.version)
 		} catch (error) {
-			spinner.error(`Failed to update project version: ${error.message}`)
+			spinner.error(`Failed to update project version: ${error instanceof Error ? error.message : String(error)}`)
 			process.exit(1)
 		}
 		spinner.success(`${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated to ${pullRequestData.nextVersion.version}`)
@@ -164,7 +170,7 @@ export const pr = (...args) => {
 			// Commit and push changes
 			commitAndPush(`chore: bump version to ${pullRequestData.nextVersion.version}`)
 		} catch (error) {
-			spinner.error(`Failed to commit and push changes: ${error.message}`)
+			spinner.error(`Failed to commit and push changes: ${error instanceof Error ? error.message : String(error)}`)
 			process.exit(1)
 		}
 		spinner.success("Version update committed and pushed to remote")

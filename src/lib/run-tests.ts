@@ -1,8 +1,7 @@
 import { execSync } from "node:child_process"
-import { ProjectInfo } from "./types/zod.js"
+import type { ProjectInfo } from "../types/semver.js"
 
-export const runTests = (projectInfo) => {
-	projectInfo = ProjectInfo.parse(projectInfo)
+export const runTests = (projectInfo: ProjectInfo): void => {
 	switch (projectInfo.type) {
 		case "node": {
 			execSync("npm test")

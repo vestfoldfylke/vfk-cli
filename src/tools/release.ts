@@ -1,11 +1,10 @@
 import yoctoSpinner from "yocto-spinner"
-import z from "zod"
 import { clickableLink } from "../lib/clickable-link.js"
 import { getCommitsSinceTag, getLatestReleaseTag, getRepoInfo, repoIsReadyForRelease } from "../lib/git.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getProjectInfo, getSemverReleaseType } from "../lib/semver.js"
-import { GitLogCommits, ProjectInfo, ReleaseTypes } from "../lib/types/zod.js"
+import type { ReleaseData } from "../types/tools.js"
 
 const toolHelp = `
   VFK Release Tool
@@ -21,16 +20,7 @@ const toolHelp = `
     provides a link to create the release on GitHub.
 `
 
-/** @typedef {z.infer<typeof ReleaseData>} ReleaseData */
-const ReleaseData = z.object({
-	latestTag: z.string().nullable(),
-	projectInfo: ProjectInfo.nullable(),
-	semverType: ReleaseTypes.nullable(),
-	commits: GitLogCommits.nullable(),
-	releaseNotes: z.string().nullable()
-})
-
-export const release = (...args) => {
+export const release = (...args: string[]) => {
 	if (args[0] === "help") {
 		console.log(toolHelp)
 		process.exit(1)
@@ -44,26 +34,25 @@ export const release = (...args) => {
 	try {
 		repoIsReadyForRelease(repoInfo)
 	} catch (error) {
-		spinner.error(`Repository is not ready for release: ${error.message}`)
+		spinner.error(`Repository is not ready for release: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success("Repository is clean and up-to-date")
 
-	/** @type {ReleaseData} */
-	const releaseData = ReleaseData.parse({
+	const releaseData: ReleaseData = {
 		latestTag: null,
 		projectInfo: null,
-		semverType: null,
-		nextVersion: null,
+		releaseType: null,
 		commits: null,
 		releaseNotes: null
-	})
+	}
 
 	spinner = yoctoSpinner({ text: "Getting project info..." }).start()
 	try {
 		releaseData.projectInfo = getProjectInfo()
 	} catch (error) {
-		spinner.error(`Failed to get project info: ${error.message}`)
+		spinner.error(`Failed to get project info: ${error instanceof Error ? error.message : String(error)}`)
+		process.exit(1)
 	}
 	spinner.success(`Project version is ${releaseData.projectInfo.version} (${releaseData.projectInfo.type})`)
 
@@ -72,7 +61,7 @@ export const release = (...args) => {
 	try {
 		runTests(releaseData.projectInfo)
 	} catch (error) {
-		spinner.error(`Tests failed, please fix the errors before you create a release: ${error.message}`)
+		spinner.error(`Tests failed, please fix the errors before you create a release: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success("All tests passed")
@@ -81,7 +70,7 @@ export const release = (...args) => {
 	try {
 		releaseData.latestTag = getLatestReleaseTag()
 	} catch (error) {
-		spinner.error(`Failed to get latest release tag: ${error.message}`)
+		spinner.error(`Failed to get latest release tag: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 
@@ -96,25 +85,25 @@ export const release = (...args) => {
 			process.exit(1)
 		}
 	} catch (error) {
-		spinner.error(`Failed to get commits: ${error.message}`)
+		spinner.error(`Failed to get commits: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success(`Found ${releaseData.commits.length} commit(s) since latest tag ${releaseData.latestTag}`)
 
 	// Finn ut av hva slags semver type release vi skal lage basert på latestTag og project version
-	spinner = yoctoSpinner({ text: "Determining semver type based on latest release tag and current project version..." }).start()
+	spinner = yoctoSpinner({ text: "Determining release type (semver) based on latest release tag and current project version..." }).start()
 	try {
-		releaseData.semverType = getSemverReleaseType(releaseData.latestTag, releaseData.projectInfo)
+		releaseData.releaseType = getSemverReleaseType(releaseData.latestTag, releaseData.projectInfo)
 	} catch (error) {
-		spinner.error(`Failed to determine semver type: ${error.message}`)
+		spinner.error(`Failed to determine semver type: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
-	spinner.success(`Determined semver type is ${releaseData.semverType}. Release-tag will be ${releaseData.projectInfo.version}`)
+	spinner.success(`Determined release type (semver) is ${releaseData.releaseType}. Release-tag will be ${releaseData.projectInfo.version}`)
 
 	try {
 		releaseData.releaseNotes = generateReleaseNotes(releaseData)
 	} catch (error) {
-		spinner.error(`Failed to generate release notes: ${error.message}`)
+		spinner.error(`Failed to generate release notes: ${error instanceof Error ? error.message : String(error)}`)
 		process.exit(1)
 	}
 	spinner.success("Release notes generated")

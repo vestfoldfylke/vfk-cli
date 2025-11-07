@@ -1,8 +1,7 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --enable-source-maps
 
-import z from "zod"
-import { pr } from "../tools/pr.js"
-import { release } from "../tools/release.js"
+import { pr } from "./tools/pr.js"
+import { release } from "./tools/release.js"
 
 const usage = `vfk <command>
 
@@ -13,10 +12,9 @@ vfk release        create a GitHub release with auto-release notes and tag from 
 vfk help           display this help message
 `
 
-/** @typedef { z.infer<typeof Tool> } */
-const Tool = z.enum(["release", "pr", "help", ""])
+type Tool = "release" | "pr" | "help" | ""
 
-const selectedTool = Tool.parse(process.argv[2] || "")
+const selectedTool: Tool = (process.argv[2] as Tool) || ""
 
 const args = process.argv.slice(3)
 
@@ -34,5 +32,5 @@ switch (selectedTool) {
 		console.log(usage)
 		break
 	default:
-		throw new Error("NO TOOL SELECTED")
+		throw new Error("SPECIFIED TOOL NOT FOUND")
 }
