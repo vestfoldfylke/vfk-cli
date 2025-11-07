@@ -152,7 +152,7 @@ export const getBranchSpecificCommits = (branchName: string): GitLogCommit[] => 
 /**
  * Maps semantic versioning release types to arrays of conventional commit keywords.
  */
-export type ConventionalCommitTypes = {
+type ConventionalCommitTypes = {
 	major: string[]
 	minor: string[]
 	patch: string[]
