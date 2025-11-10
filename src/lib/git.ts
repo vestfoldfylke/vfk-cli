@@ -18,13 +18,11 @@ const runGitCommand = (command: string) => {
 }
 
 const getGithubUsername = (): string | undefined => {
-  try {
-    return runGitCommand("git config --get github.user")?.trim()
-      ?? runGitCommand("git config --global --get github.user")?.trim()
-      ?? undefined
-  } catch {
-    return undefined
-  }
+	try {
+		return runGitCommand("git config --get github.user")?.trim() ?? runGitCommand("git config --global --get github.user")?.trim() ?? undefined
+	} catch {
+		return undefined
+	}
 }
 
 export const getDefaultBranch = () => {
@@ -91,7 +89,7 @@ export const getRepoInfo = (): RepoInfo => {
 	const githubUrl = (remoteUrl.startsWith("git@") ? remoteUrl.replace("git@github.com:", "https://github.com/") : remoteUrl).replace(/\.git$/, "")
 	// git@github.com:<owner>/<repo>.git - SSH version
 	// https://github.com/<owner>/<repo>.git - HTTPS version
-  const githubUsername = getGithubUsername()
+	const githubUsername = getGithubUsername()
 	const currentBranch = getCurrentBranch()
 	const defaultBranch = getDefaultBranch()
 	const repoIsClean = isRepoClean()
@@ -100,7 +98,7 @@ export const getRepoInfo = (): RepoInfo => {
 	return {
 		remoteUrl,
 		githubUrl,
-    githubUsername,
+		githubUsername,
 		currentBranch,
 		defaultBranch,
 		repoIsClean,

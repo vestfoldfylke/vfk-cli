@@ -182,9 +182,13 @@ export const pr = (...args: string[]) => {
 		spinner.success()
 	}
 
-  if (!repoInfo.githubUsername) {
-    yoctoSpinner({text: "Consider adding 'github.user' to your git config to allow setting your GitHub user as assignee to the PR's you create. Run: 'git config --global github.user %replace-with-your-github-username%'"}).start().warning()
-  }
+	if (!repoInfo.githubUsername) {
+		yoctoSpinner({
+			text: "Consider adding 'github.user' to your git config to allow setting your GitHub user as assignee to the PR's you create. Run: 'git config --global github.user %replace-with-your-github-username%'"
+		})
+			.start()
+			.warning()
+	}
 
 	// Then we create a PR from a query link to GitHub with the right info filled in
 	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
