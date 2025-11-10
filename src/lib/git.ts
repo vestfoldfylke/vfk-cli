@@ -3,9 +3,10 @@ import type { GitLogCommit, RepoInfo, SortedCommits } from "../types/git.js"
 import { getLatestSemverTag } from "./semver.js"
 
 const runGitCommand = (command: string) => {
-	if (typeof command !== "string" || !command.startsWith("git ")) {
+	if (!command.startsWith("git ")) {
 		throw new Error("Command must be string and only git commands are allowed")
 	}
+
 	try {
 		const res = execSync(command)
 		return res.toString()
@@ -118,7 +119,8 @@ export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
 		if (properties.length < prettyPropertyNamesInOrder.length) {
 			throw new Error("Pretty format and property names length mismatch, check prettyFormat and property names array (that they have same number of properties, and in same order)")
 		}
-		const commit = {
+
+		return {
 			hash: properties[0] as string,
 			authorName: properties[1] as string,
 			authorEmail: properties[2] as string,
@@ -126,7 +128,6 @@ export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
 			body: properties[4] as string,
 			commitDate: properties[5] as string
 		}
-		return commit
 	})
 }
 
