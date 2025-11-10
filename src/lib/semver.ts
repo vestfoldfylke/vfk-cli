@@ -27,37 +27,40 @@ export const getProjectInfo = (): ProjectInfo => {
 		return {
 			version: pkg.version,
 			type: "node",
-			paths
+			paths,
+      name: pkg.name
 		}
 	}
+
 	// .NET - .csproj
 	const csProjFiles = readdirSync("./", { recursive: true }).filter((filename) => typeof filename === "string" && filename.endsWith(".csproj") && !filename.match(/\/bin\/|\/obj\//))
 	if (!csProjFiles.every((file) => typeof file === "string")) {
 		throw new Error("Error reading .csproj files, not all filenames are strings.")
 	}
 	if (csProjFiles.length > 0) {
-		const versions = csProjFiles
+		const versions: { version: string | undefined, path: string }[] | null = csProjFiles
 			.map((file) => {
 				const content = readFileSync(`./${file}`, "utf-8")
 				const match = content.match(/<Version>(.*?)<\/Version>/)
 				return match ? { version: match[1], path: file } : null
 			})
-			.filter((v) => v !== null)
+			.filter((v: { version: string | undefined, path: string } | null) => v !== null)
 		if (versions.length > 1) {
 			throw new Error("Multiple .csproj files with version tag found in solution.")
 		}
-		if (!versions[0]) {
+		if (versions.length === 0) {
 			throw new Error("No <Version> tag found in any .csproj file.")
 		}
-		if (!semver.valid(versions[0].version)) {
-			throw new Error(`Invalid semver version in ${versions[0].path}: ${versions[0].version}, please fix it manually before proceeding...`)
+		if (!semver.valid(versions[0]?.version)) {
+			throw new Error(`Invalid semver version in ${versions[0]?.path}: ${versions[0]?.version}, please fix it manually before proceeding...`)
 		}
 		return {
-			version: versions[0].version as string, // We know it's defined here, as semver.valid passed
+			version: versions[0]!.version as string, // We know it's defined here, as semver.valid passed
 			type: "dotnet",
-			paths: [versions[0].path]
+			paths: [versions[0]!.path]
 		}
 	}
+
 	// Add more project types as needed
 	throw new Error("Unsupported project type for version retrieval.")
 }
@@ -120,13 +123,22 @@ export const updateProjectVersion = (projectInfo: ProjectInfo, newVersion: strin
 	if (!semver.valid(newVersion)) {
 		throw new Error(`Invalid semver version for new version: ${newVersion}`)
 	}
+
 	switch (projectInfo.type) {
 		case "node": {
 			for (const path of projectInfo.paths) {
 				// We do not parse JSON to preserve formatting yes
 				const content = readFileSync(path, "utf-8")
-				const newContent = content.replace(/"version": "(.*?)"/, `"version": "${newVersion}"`)
-				writeFileSync(path, newContent, "utf-8")
+        if (projectInfo.name) {
+          const newContent = content.replace(new RegExp(`("name": "${projectInfo.name}",\\s+"version": ")[^"]*(")`, "g"), (_: string, prefix: string, suffix: string): string => {
+            return `${prefix}${newVersion}${suffix}`
+          })
+          writeFileSync(path, newContent, "utf-8")
+          continue
+        }
+
+        const newContent = content.replace(/"version": "(.*?)"/, `"version": "${newVersion}"`)
+        writeFileSync(path, newContent, "utf-8")
 			}
 			break
 		}
