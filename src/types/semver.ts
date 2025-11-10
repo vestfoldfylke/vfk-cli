@@ -2,7 +2,7 @@ export type ProjectInfo = {
 	version: string
 	type: "node" | "dotnet"
 	paths: string[]
-  name?: string
+	name?: string
 }
 
 export type NextVersion = {
