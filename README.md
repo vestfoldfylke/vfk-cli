@@ -1,47 +1,66 @@
 # vfk-cli
 A command line interface for our pleasure
 
+vfk-cli will help you create a beautiful pull request and release based on conventional commits.<br />
+Conventional commits are commits that follow the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/).
 
-# KA VI VIL
+Supported conventional commit types:
+- Maintenance (🛠): test, style, docs, chore, refactor
+- Patch (🐛): fix, perf, patch
+- Minor (✨): feat, minor
+- Major (🚨): breaking change, breaking, major, feat!, fix!
 
-Kjøre en kommando fra terminal - "PR" - patch, minor, major (kan sikkert ha noen flag og)
+If a commit does not start with one of the supported conventional commit types, it will be put under `Other commits` section in the changelog.
 
-- Den sjekker hva slags prosjekt du er i.
-- Sjekker at du er up-to-date med origin i current branch. Og at du ikke har masse endringer liggende som du har glemt. (med flag at du kan få lov)
-- Henter nyeste semver-tag samma hvor den kommer fra.
-- Henter alle endringer siden forrige tag?
-- Lager kanskje en fin squash commit? Kanskje ikke?
-- Sjekker versjon for prosjektet (avhengig av språk/rammeverk), sjekker om det trengs å oppdateres, oppdaterer om det trengs.
-- OPpretter en fancy lenke til ny PR som er klikkbar. (trykk og opprett PR - done) kanskje setter assigne og tags og sånt
+Supported project types:
+- Node.js (package.json, package-lock.json)
+- dotnet (*.csproj first one with <Version> tag)
 
-SPECIAL CASE - 1.0.0 i project, ingen tag - initial release, bruk 1.0.0
+## vfk pr [patch|minor|major]
 
+Create a pull request with a version bump and changelog based on conventional commits since last release.<br />
+If no previous release is found, it will create an initial release with version 1.0.0.
 
+Steps performed:
+- Check current branch is NOT default branch and that current branch is up-to-date with origin and has no uncommitted changes
+- Determine and get project information (supports Node.js and dotnet projects)
+- Run tests to ensure code is working before creating PR
+- Get and analyze commits since last release tag (if no tag found, will create initial release)
+  - If no commits found, will exit with error message
+  - If chosen pr type is lower than the highest type found in commits, will exit with error message
+- Find latest version tag
+- Determining new version based on chosen pr type, commits found and latest version tag
+- Bump project version file(s)
+  - Node.js: package.json, package-lock.json
+  - dotnet: *.csproj (the first one found that contains a <Version> tag)
+- Commit version bump and push to origin
+- Generate changelog based on commits found
+- Create pull request link with title and description (changelog)
 
-Det må godkjennes og merges - så går det kanskje deployment til et testmilljø
+### Usage
+```bash
+vfk pr patch
+vfk pr minor
+vfk pr major
+```
 
-Når det er klart for prod - gå til main-branch (husk en pull) og kjør en release fra cli
-- Verifiser at du er up-to-date. Og at tag og f. eks package.json stemmer
-- Release cli henter alle commits siden forrige release, og lager fancy release notes
-- Opprett lenke til release-form, og tut og kjør
+## vfk release
 
+Create a release with changelog based on conventional commits since last release.<br />
+Will create a release draft on GitHub with changelog and tag the release commit.
 
-## HVA må vi ta høyde for
+Steps performed:
+- Check current branch is default branch and that current branch is up-to-date with origin and has no uncommitted changes
+- Run tests to ensure code is working before creating release
+- Find latest version tag
+- Get and analyze commits since last release tag (if no tag found, will create initial release)
+    - If no commits found, will exit with error message
+- Determining new version based on latest version tag and project version
+- Generate release notes based on commits found
+- Create release draft link with title, description (release notes) and tag
 
-- PR kan ligge der allerede - DET GÅR BRA, den åpner bare samme PR
-- Hvis man har glemt at den ligger der, og kjører PR-koommando fra terminal.
-- Kan man ha to PR på samma branch
-- Kan vi sjekke issues i samma slengen??
-  - Kan vi bare bruke gh cli til dette?
-- Det skal gå bra selv om man har laget manuell PR og glemt versjonering til og med
-- 
-
-
-## Tanker
-- Støtte for monorepo - f. eks at du får valg om hvilke ting som skal bumpes
-
-HVAAA om man jobber på 2 PR samtidig? Da er det vel bare førstemann til mølla, og vfk-cli må bli lei seg om man var sist.
-- Merk at hvis vi bruker versjon i PR tittel, så blir ikke den endra om man må endre det på nytt... Bruk feature name eller no fancy
-
-- Rune kjører en minor og jeg kjører en patch på samme tid. Rune dytter til main først.
-- Så kjører jeg pr patch. Får beskjed om at jeg er behind main, så jeg trekker inn koden til Rune. Jeg merger inn koden, så kjører jeg pr igjen. Fiksa ved å sjekke om project-version allerede er bumped en gang, og om den allerede er "stor nok"
+### Usage
+```bash
+vfk release
+vfk rel
+```
