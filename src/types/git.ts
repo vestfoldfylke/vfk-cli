@@ -1,6 +1,7 @@
 export type RepoInfo = {
 	remoteUrl: string
 	githubUrl: string
+	githubUsername?: string | undefined
 	currentBranch: string
 	defaultBranch: string
 	repoIsClean: boolean

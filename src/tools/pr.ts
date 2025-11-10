@@ -182,6 +182,14 @@ export const pr = (...args: string[]) => {
 		spinner.success()
 	}
 
+	if (!repoInfo.githubUsername) {
+		yoctoSpinner({
+			text: "Consider adding 'github.user' to your git config to allow setting your GitHub user as assignee to the PR's you create. Run: 'git config --global github.user %replace-with-your-github-username%'"
+		})
+			.start()
+			.warning()
+	}
+
 	// Then we create a PR from a query link to GitHub with the right info filled in
 	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
 	// Create PR body based on all the commits in the branch
@@ -195,8 +203,7 @@ export const pr = (...args: string[]) => {
 		}
 	}
 
-	// const prBody = "PLACEHOLDER BODY\n\n Closes #{issue_number} - for automatic closing of issues : add description of closing notes here"
-
-	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}`
+	const assignee = repoInfo.githubUsername ? `&assignees=${encodeURIComponent(repoInfo.githubUsername)}` : ""
+	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}${assignee}`
 	openUrl(prLink, "🪾 Create your PR here if it did not open automatically")
 }
