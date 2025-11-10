@@ -8,7 +8,7 @@ const runGitCommand = (command: string) => {
 	}
 	try {
 		const res = execSync(command)
-		return res.toString()
+		return res.toString().trim()
 	} catch (err) {
 		if (err instanceof Error && err.message.includes("Not a git repository")) {
 			throw new Error("Directory is not a Git repository")
@@ -19,18 +19,18 @@ const runGitCommand = (command: string) => {
 
 const getGithubUsername = (): string | undefined => {
 	try {
-		return runGitCommand("git config --get github.user")?.trim() ?? runGitCommand("git config --global --get github.user")?.trim() ?? undefined
+		return runGitCommand("git config --get github.user") ?? runGitCommand("git config --global --get github.user") ?? undefined
 	} catch {
 		return undefined
 	}
 }
 
 export const getDefaultBranch = () => {
-	return runGitCommand("git rev-parse --abbrev-ref origin/HEAD").trim().replace("origin/", "")
+	return runGitCommand("git rev-parse --abbrev-ref origin/HEAD").replace("origin/", "")
 }
 
 export const getCurrentBranch = () => {
-	return runGitCommand("git rev-parse --abbrev-ref HEAD").trim()
+	return runGitCommand("git rev-parse --abbrev-ref HEAD")
 }
 
 export const fetchChangesAndTags = () => {
@@ -44,7 +44,7 @@ export const isRepoClean = () => {
 
 export const getCommitsBehindAndAheadDefaultBranch = () => {
 	const defaultBranch = getDefaultBranch()
-	const diff = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`).trim()
+	const diff = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`)
 	const [behind, ahead] = diff.split("\t")
 	if (!behind || !ahead) {
 		throw new Error("Could not determine commit difference between current branch and default branch")
@@ -53,7 +53,7 @@ export const getCommitsBehindAndAheadDefaultBranch = () => {
 }
 
 export const getLatestReleaseTag = () => {
-	const tags = runGitCommand("git tag").trim().split("\n")
+	const tags = runGitCommand("git tag").split("\n")
 	return getLatestSemverTag(tags)
 }
 
@@ -81,7 +81,7 @@ export const repoIsReadyForRelease = (repoInfo: RepoInfo) => {
 }
 
 export const getRepoInfo = (): RepoInfo => {
-	const remoteUrl = runGitCommand("git config --get remote.origin.url").trim()
+	const remoteUrl = runGitCommand("git config --get remote.origin.url")
 	if (!(remoteUrl.startsWith("git@github.com:") || remoteUrl.startsWith("https://github.com/"))) {
 		throw new Error("Repository is not a GitHub repository. VFK CLI only supports GitHub for PR creation.")
 	}
@@ -142,8 +142,8 @@ export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
 
 export const getCommitsSinceTag = (tagOrCommitHash: string | null | undefined): GitLogCommit[] => {
 	const log = tagOrCommitHash
-		? runGitCommand(`git log --pretty=format:'${prettyFormat}' ${tagOrCommitHash}..HEAD --date=iso-strict`).trim()
-		: runGitCommand(`git log --pretty=format:'${prettyFormat}' --date=iso-strict`).trim()
+		? runGitCommand(`git log --pretty=format:'${prettyFormat}' ${tagOrCommitHash}..HEAD --date=iso-strict`)
+		: runGitCommand(`git log --pretty=format:'${prettyFormat}' --date=iso-strict`)
 	if (!log) {
 		return []
 	}
@@ -152,7 +152,7 @@ export const getCommitsSinceTag = (tagOrCommitHash: string | null | undefined): 
 
 export const getBranchSpecificCommits = (branchName: string): GitLogCommit[] => {
 	const defaultBranch = getDefaultBranch()
-	const log = runGitCommand(`git log --pretty=format:'${prettyFormat}' origin/${defaultBranch}..${branchName} --date=iso-strict`).trim()
+	const log = runGitCommand(`git log --pretty=format:'${prettyFormat}' origin/${defaultBranch}..${branchName} --date=iso-strict`)
 	if (!log) {
 		return []
 	}
