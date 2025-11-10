@@ -137,15 +137,13 @@ export const updateProjectVersion = (projectInfo: ProjectInfo, newVersion: strin
 			for (const path of projectInfo.paths) {
 				// We do not parse JSON to preserve formatting yes
 				const content = readFileSync(path, "utf-8")
-				if (projectInfo.name) {
-					const newContent = content.replace(new RegExp(`("name": "${projectInfo.name}",\\s+"version": ")[^"]*(")`, "g"), (_: string, prefix: string, suffix: string): string => {
-						return `${prefix}${newVersion}${suffix}`
-					})
-					writeFileSync(path, newContent, "utf-8")
-					continue
+				if (!projectInfo.name) {
+					throw new Error("Project name is required to update version.")
 				}
 
-				const newContent = content.replace(/"version": "(.*?)"/, `"version": "${newVersion}"`)
+				const newContent = content.replace(new RegExp(`("name": "${projectInfo.name}",\\s+"version": ")[^"]*(")`, "g"), (_: string, prefix: string, suffix: string): string => {
+					return `${prefix}${newVersion}${suffix}`
+				})
 				writeFileSync(path, newContent, "utf-8")
 			}
 			break
