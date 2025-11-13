@@ -1,9 +1,13 @@
 {
 	"name": "@vestfoldfylke/vfk-cli",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "A command line interface for our pleasure",
 	"main": "dist/index.js",
 	"type": "module",
+	"files": [
+		"dist",
+		"package.json"
+	],
 	"scripts": {
 		"build": "tsc",
 		"lint": "npx @biomejs/biome check",
@@ -21,7 +25,16 @@
 	"keywords": [
 		"pleasure"
 	],
-	"author": "jorgtho",
+	"author": {
+		"name": "Jørgen Thorsnes",
+		"url": "https://github.com/jorgtho"
+	},
+	"contributors": [
+		{
+			"name": "Rune Moskvil Lyngås",
+			"url": "https://github.com/runely"
+		}
+	],
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/vestfoldfylke/vfk-cli/issues"
