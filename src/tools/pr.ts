@@ -164,7 +164,7 @@ export const pr = (...args: string[]) => {
 		spinner.success(`${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated to ${pullRequestData.nextVersion.version}`)
 
 		spinner = yoctoSpinner({
-			text: "Committing version update and pushing to remote"
+			text: "Committing version update and pushing to remote :: "
 		}).start()
 		try {
 			// Commit and push changes
