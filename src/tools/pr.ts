@@ -1,9 +1,9 @@
-import yoctoSpinner from "yocto-spinner"
+import yoctoSpinner, { type Spinner } from "yocto-spinner"
 import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
 import { openUrl } from "../lib/open-url.js"
 import { runTests } from "../lib/run-tests.js"
 import { getNextVersion, getProjectInfo, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
-import type { GitCommitType, GitLogCommit } from "../types/git.js"
+import type { GitCommitType, GitLogCommit, RepoInfo } from "../types/git.js"
 import type { PullRequestData, SupportedSemverType } from "../types/tools.js"
 
 const toolHelp = `
@@ -21,16 +21,16 @@ const toolHelp = `
     provides a link to create the pull request on GitHub.
 `
 
-export const pr = (...args: string[]) => {
+export const pr = (...args: string[]): void => {
 	if (args.length === 0 || args[0] === "help" || !SUPPORTED_SEMVER_TYPES_BY_PRIORITY.includes(args[0] as SupportedSemverType)) {
 		console.log(toolHelp)
 		process.exit(1)
 	}
 
-	const repoInfo = getRepoInfo()
+	const repoInfo: RepoInfo = getRepoInfo()
 
 	// yocto-spinner og yocto-colors
-	let spinner = yoctoSpinner({
+	let spinner: Spinner = yoctoSpinner({
 		text: "Checking if repo is clean and up-to-date..."
 	}).start()
 	try {
@@ -53,7 +53,7 @@ export const pr = (...args: string[]) => {
 	try {
 		pullRequestData.projectInfo = getProjectInfo()
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error)
+		const errorMessage: string = error instanceof Error ? error.message : String(error)
 		spinner.error(`Failed to get project info: ${errorMessage}`)
 		process.exit(1)
 	}
@@ -94,14 +94,14 @@ export const pr = (...args: string[]) => {
 		// Determine the highest semver type present in the commits
 		const commitTypesByPriority: GitCommitType[] = [...SUPPORTED_SEMVER_TYPES_BY_PRIORITY, "maintenance", "other"]
 
-		const highestCommitType = commitTypesByPriority.find((type) => pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0)
+		const highestCommitType: GitCommitType | undefined = commitTypesByPriority.find((type: GitCommitType) => pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0)
 		if (!highestCommitType) {
 			spinner.error("No commit types found. Probably no commits at all, but we already checked that??? Contact idiot-developers.")
 			process.exit(1)
 		}
 
-		const requestedTypeIndex = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
-		const highestTypeIndex = commitTypesByPriority.indexOf(highestCommitType)
+		const requestedTypeIndex: number = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
+		const highestTypeIndex: number = commitTypesByPriority.indexOf(highestCommitType)
 		if (highestTypeIndex < requestedTypeIndex) {
 			spinner.error(
 				`The requested PR type "${pullRequestData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
@@ -193,7 +193,7 @@ export const pr = (...args: string[]) => {
 	// Then we create a PR from a query link to GitHub with the right info filled in
 	const prTitle = `${pullRequestData.semverType}: ${pullRequestData.nextVersion.version} - ${repoInfo.currentBranch}`
 	// Create PR body based on all the commits in the branch
-	let prBody = ""
+	let prBody: string = ""
 	for (const [type, commits] of Object.entries(pullRequestData.sortedCommits)) {
 		if (commits && commits.length > 0) {
 			prBody += `\n### ${type.charAt(0).toUpperCase() + type.slice(1)} commits:\n`
@@ -203,7 +203,7 @@ export const pr = (...args: string[]) => {
 		}
 	}
 
-	const assignee = repoInfo.githubUsername ? `&assignees=${encodeURIComponent(repoInfo.githubUsername)}` : ""
+	const assignee: string = repoInfo.githubUsername ? `&assignees=${encodeURIComponent(repoInfo.githubUsername)}` : ""
 	const prLink = `${repoInfo.githubUrl}/compare/${repoInfo.defaultBranch}...${encodeURIComponent(repoInfo.currentBranch)}?quick_pull=1&title=${encodeURIComponent(prTitle)}&body=${encodeURIComponent(prBody)}${assignee}`
 	openUrl(prLink, "🪾 Create your PR here if it did not open automatically")
 }

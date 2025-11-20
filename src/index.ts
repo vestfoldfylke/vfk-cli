@@ -16,7 +16,7 @@ type Tool = "release" | "pr" | "help" | ""
 
 const selectedTool: Tool = (process.argv[2] as Tool) || ""
 
-const args = process.argv.slice(3)
+const args: string[] = process.argv.slice(3)
 
 switch (selectedTool) {
 	case "pr":
