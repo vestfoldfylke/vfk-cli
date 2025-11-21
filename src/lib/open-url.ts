@@ -1,4 +1,4 @@
-import { exec } from "node:child_process"
+import { type ExecException, exec } from "node:child_process"
 
 export const openUrl = (url: string, message: string = ""): void => {
 	let command: string
@@ -17,13 +17,13 @@ export const openUrl = (url: string, message: string = ""): void => {
 			break
 	}
 
-	exec(command, (error) => {
+	exec(command, (error: ExecException | null) => {
 		if (error) {
 			console.error(`Error opening URL: ${error.message}`)
 			return
 		}
 
-		const messageStr = message.length > 0 ? `${message}: ` : ""
+		const messageStr: string = message.length > 0 ? `${message}: ` : ""
 		console.log(`${messageStr}${url}`)
 	})
 }

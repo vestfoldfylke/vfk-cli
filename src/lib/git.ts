@@ -1,8 +1,13 @@
 import { execSync } from "node:child_process"
-import type { GitLogCommit, RepoInfo, SortedCommits } from "../types/git.js"
+import type { GitCommitType, GitLogCommit, RepoInfo, SortedCommits } from "../types/git.js"
 import { getLatestSemverTag } from "./semver.js"
 
-const runGitCommand = (command: string) => {
+type CommitsBehindAhead = {
+	behind: number
+	ahead: number
+}
+
+const runGitCommand = (command: string): string => {
 	if (!command.startsWith("git ")) {
 		throw new Error("Command must be string and only git commands are allowed")
 	}
@@ -26,26 +31,26 @@ const getGithubUsername = (): string | undefined => {
 	}
 }
 
-export const getDefaultBranch = () => {
+export const getDefaultBranch = (): string => {
 	return runGitCommand("git rev-parse --abbrev-ref origin/HEAD").replace("origin/", "")
 }
 
-export const getCurrentBranch = () => {
+export const getCurrentBranch = (): string => {
 	return runGitCommand("git rev-parse --abbrev-ref HEAD")
 }
 
-export const fetchChangesAndTags = () => {
+export const fetchChangesAndTags = (): string => {
 	return runGitCommand("git fetch --all --tags --quiet")
 }
 
-export const isRepoClean = () => {
-	const status = runGitCommand("git status")
+export const isRepoClean = (): boolean => {
+	const status: string = runGitCommand("git status")
 	return status.includes("Your branch is up to date with ") && status.includes("nothing to commit, working tree clean")
 }
 
-export const getCommitsBehindAndAheadDefaultBranch = () => {
-	const defaultBranch = getDefaultBranch()
-	const diff = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`)
+export const getCommitsBehindAndAheadDefaultBranch = (): CommitsBehindAhead => {
+	const defaultBranch: string = getDefaultBranch()
+	const diff: string = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`)
 	const [behind, ahead] = diff.split("\t")
 	if (!behind || !ahead) {
 		throw new Error("Could not determine commit difference between current branch and default branch")
@@ -53,12 +58,12 @@ export const getCommitsBehindAndAheadDefaultBranch = () => {
 	return { behind: parseInt(behind, 10), ahead: parseInt(ahead, 10) }
 }
 
-export const getLatestReleaseTag = () => {
-	const tags = runGitCommand("git tag").split("\n")
+export const getLatestReleaseTag = (): string | null => {
+	const tags: string[] = runGitCommand("git tag").split("\n")
 	return getLatestSemverTag(tags)
 }
 
-export const repoIsReadyForPullRequest = (repoInfo: RepoInfo) => {
+export const repoIsReadyForPullRequest = (repoInfo: RepoInfo): void => {
 	if (repoInfo.currentBranch === repoInfo.defaultBranch) {
 		throw new Error("You are currently on the default branch. Please switch to a feature branch to create a PR.")
 	}
@@ -72,7 +77,7 @@ export const repoIsReadyForPullRequest = (repoInfo: RepoInfo) => {
 	}
 }
 
-export const repoIsReadyForRelease = (repoInfo: RepoInfo) => {
+export const repoIsReadyForRelease = (repoInfo: RepoInfo): void => {
 	if (repoInfo.currentBranch !== repoInfo.defaultBranch) {
 		throw new Error(`You are currently on branch ${repoInfo.currentBranch}. Please switch to the default branch (${repoInfo.defaultBranch}) to create a release.`)
 	}
@@ -82,19 +87,19 @@ export const repoIsReadyForRelease = (repoInfo: RepoInfo) => {
 }
 
 export const getRepoInfo = (): RepoInfo => {
-	const remoteUrl = runGitCommand("git config --get remote.origin.url")
+	const remoteUrl: string = runGitCommand("git config --get remote.origin.url")
 	if (!(remoteUrl.startsWith("git@github.com:") || remoteUrl.startsWith("https://github.com/"))) {
 		throw new Error("Repository is not a GitHub repository. VFK CLI only supports GitHub for PR creation.")
 	}
 	fetchChangesAndTags()
-	const githubUrl = (remoteUrl.startsWith("git@") ? remoteUrl.replace("git@github.com:", "https://github.com/") : remoteUrl).replace(/\.git$/, "")
+	const githubUrl: string = (remoteUrl.startsWith("git@") ? remoteUrl.replace("git@github.com:", "https://github.com/") : remoteUrl).replace(/\.git$/, "")
 	// git@github.com:<owner>/<repo>.git - SSH version
 	// https://github.com/<owner>/<repo>.git - HTTPS version
-	const githubUsername = getGithubUsername()
-	const currentBranch = getCurrentBranch()
-	const defaultBranch = getDefaultBranch()
-	const repoIsClean = isRepoClean()
-	const commitDiff = getCommitsBehindAndAheadDefaultBranch()
+	const githubUsername: string | undefined = getGithubUsername()
+	const currentBranch: string = getCurrentBranch()
+	const defaultBranch: string = getDefaultBranch()
+	const repoIsClean: boolean = isRepoClean()
+	const commitDiff: CommitsBehindAhead = getCommitsBehindAndAheadDefaultBranch()
 
 	return {
 		remoteUrl,
@@ -107,25 +112,25 @@ export const getRepoInfo = (): RepoInfo => {
 	}
 }
 
-export const commitAndPush = (message: string) => {
+export const commitAndPush = (message: string): void => {
 	runGitCommand("git add .")
 	runGitCommand(`git commit -m "${message}"`)
-	const currentBranch = getCurrentBranch()
+	const currentBranch: string = getCurrentBranch()
 	runGitCommand(`git push origin ${currentBranch} --quiet`)
 }
 
 const commitSeparator = "%x00ENDOFCOMMIT%x00" // Nul-character as separator, as it is not allowed in commit messages
 const prettyFormat = `%h%x00%an%x00%ae%x00%s%x00%b%x00%ad${commitSeparator}`
 
-const prettyPropertyNamesInOrder = ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]
+const prettyPropertyNamesInOrder: string[] = ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]
 const commitOutputSeparator = "\x00ENDOFCOMMIT\x00\n" // add newline after commit separator to also remove the newlines after each new commit line from git log
 const commitPropertySeparator = "\x00"
 
 export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
-	const commitEntries = rawLog.split(commitOutputSeparator).filter((entry) => entry.trim() !== "")
+	const commitEntries: string[] = rawLog.split(commitOutputSeparator).filter((entry) => entry.trim() !== "")
 
-	return commitEntries.map((entry) => {
-		const properties = entry.split(commitPropertySeparator)
+	return commitEntries.map((entry: string) => {
+		const properties: string[] = entry.split(commitPropertySeparator)
 		if (properties.length < prettyPropertyNamesInOrder.length) {
 			throw new Error("Pretty format and property names length mismatch, check prettyFormat and property names array (that they have same number of properties, and in same order)")
 		}
@@ -142,7 +147,7 @@ export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
 }
 
 export const getCommitsSinceTag = (tagOrCommitHash: string | null | undefined): GitLogCommit[] => {
-	const log = tagOrCommitHash
+	const log: string = tagOrCommitHash
 		? runGitCommand(`git log --pretty=format:'${prettyFormat}' ${tagOrCommitHash}..HEAD --date=iso-strict`)
 		: runGitCommand(`git log --pretty=format:'${prettyFormat}' --date=iso-strict`)
 	if (!log) {
@@ -152,8 +157,8 @@ export const getCommitsSinceTag = (tagOrCommitHash: string | null | undefined): 
 }
 
 export const getBranchSpecificCommits = (branchName: string): GitLogCommit[] => {
-	const defaultBranch = getDefaultBranch()
-	const log = runGitCommand(`git log --pretty=format:'${prettyFormat}' origin/${defaultBranch}..${branchName} --date=iso-strict`)
+	const defaultBranch: string = getDefaultBranch()
+	const log: string = runGitCommand(`git log --pretty=format:'${prettyFormat}' origin/${defaultBranch}..${branchName} --date=iso-strict`)
 	if (!log) {
 		return []
 	}
@@ -177,15 +182,14 @@ export const conventionalCommitTypes: ConventionalCommitTypes = {
 	maintenance: ["test", "style", "docs", "chore", "refactor"]
 }
 
-const getCommitType = (message: string): "major" | "minor" | "patch" | "maintenance" | "other" => {
+const getCommitType = (message: string): GitCommitType => {
 	message = message.trim().toLowerCase()
 	for (const [type, keywords] of Object.entries(conventionalCommitTypes)) {
 		for (const keyword of keywords) {
 			// Check for keyword at the start or after type(scope)
 			const regex = new RegExp(`^${keyword}(\\(.+\\))?(!)?(:| -|$)`, "i")
 			if (regex.test(message)) {
-				// @ts-expect-error DET ER OK
-				return type
+				return type as GitCommitType
 			}
 		}
 	}
@@ -201,12 +205,12 @@ export const sortCommitsByType = (commits: GitLogCommit[]): SortedCommits => {
 		other: []
 	}
 	for (const commit of commits) {
-		const type = getCommitType(commit.subject)
+		const type: GitCommitType = getCommitType(commit.subject)
 		sorted[type].push(commit)
 	}
 	// Sort all arrays by commit date descending
 	for (const key of Object.keys(sorted) as (keyof SortedCommits)[]) {
-		sorted[key] = sorted[key].sort((a, b) => b.commitDate.localeCompare(a.commitDate))
+		sorted[key] = sorted[key].sort((a: GitLogCommit, b: GitLogCommit) => b.commitDate.localeCompare(a.commitDate))
 	}
 	return sorted
 }
