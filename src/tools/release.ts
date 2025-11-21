@@ -1,9 +1,10 @@
-import yoctoSpinner from "yocto-spinner"
+import yoctoSpinner, { type Spinner } from "yocto-spinner"
 import { getCommitsSinceTag, getLatestReleaseTag, getRepoInfo, repoIsReadyForRelease } from "../lib/git.js"
 import { openUrl } from "../lib/open-url.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getProjectInfo, getSemverReleaseType } from "../lib/semver.js"
+import type { RepoInfo } from "../types/git"
 import type { ReleaseData } from "../types/tools.js"
 
 const toolHelp = `
@@ -20,15 +21,15 @@ const toolHelp = `
     provides a link to create the release on GitHub.
 `
 
-export const release = (...args: string[]) => {
+export const release = (...args: string[]): void => {
 	if (args[0] === "help") {
 		console.log(toolHelp)
 		process.exit(1)
 	}
 
-	const repoInfo = getRepoInfo()
+	const repoInfo: RepoInfo = getRepoInfo()
 	// yocto-spinner og yocto-colors
-	let spinner = yoctoSpinner({
+	let spinner: Spinner = yoctoSpinner({
 		text: "Checking if repo is clean and up-to-date..."
 	}).start()
 	try {
@@ -110,7 +111,7 @@ export const release = (...args: string[]) => {
 
 	// Then we create a PR from a query link to GitHub with the right info filled in
 	const releaseTitle = `Release ${releaseData.projectInfo.version}`
-	const releaseBody = releaseData.releaseNotes
+	const releaseBody: string = releaseData.releaseNotes
 
 	const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
 

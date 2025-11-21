@@ -12,7 +12,7 @@ commithash3\x00Franken Stein\x00franken.stein@smyger.no\x00chore: bump version t
 
 describe("parseGitLogs", () => {
 	it("should parse git logs into structured commits", () => {
-		const commits = parseGitLogs(rawLog)
+		const commits: GitLogCommit[] = parseGitLogs(rawLog)
 
 		assert.strictEqual(commits.length, 3)
 
@@ -42,8 +42,9 @@ describe("parseGitLogs", () => {
 			commitDate: "2025-10-29T13:06:56+01:00"
 		})
 	})
+
 	it("should return empty array for empty log", () => {
-		const commits = parseGitLogs("")
+		const commits: GitLogCommit[] = parseGitLogs("")
 
 		assert.strictEqual(commits.length, 0)
 	})
