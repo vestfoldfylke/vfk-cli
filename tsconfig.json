@@ -39,7 +39,10 @@
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force",
 		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+
+		// Modules
+		"resolveJsonModule": true
 	},
 	"exclude": ["node_modules", "dist"]
 }

@@ -161,7 +161,9 @@ export const pr = (...args: string[]): void => {
 			spinner.error(`Failed to update project version: ${error instanceof Error ? error.message : String(error)}`)
 			process.exit(1)
 		}
-		spinner.success(`${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated to ${pullRequestData.nextVersion.version}`)
+		spinner.success(
+			`${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated from ${pullRequestData.projectInfo.version} to ${pullRequestData.nextVersion.version}`
+		)
 
 		spinner = yoctoSpinner({
 			text: "Committing version update and pushing to remote :: "
