@@ -4,7 +4,7 @@ import { openUrl } from "../lib/open-url.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getProjectInfo, getSemverReleaseType } from "../lib/semver.js"
-import type { RepoInfo } from "../types/git"
+import type { RepoInfo } from "../types/git.js"
 import type { ReleaseData } from "../types/tools.js"
 
 const toolHelp = `
@@ -12,7 +12,6 @@ const toolHelp = `
 
   Usage:
     vfk release           Create a new GitHub release (and git tag)
-    vfk rel               Same as 'vfk release'
   
   Description:
     This tool helps you create a GitHub release (and git tag) for your project.
