@@ -1,25 +1,35 @@
-import { type ExecException, exec } from "node:child_process"
+import { type ChildProcess, spawn } from "node:child_process"
 
 export const openUrl = (url: string, message: string = ""): void => {
 	let command: string
+	let args: string[]
 
 	url = url.replaceAll("(", "%28").replaceAll(")", "%29")
 
 	switch (process.platform) {
 		case "darwin": // macOS
-			command = `open "${url}"`
+			command = "open"
+			args = [url]
 			break
 		case "win32": // Windows
-			command = `start "${url.replaceAll("&", "^&")}"`
+			command = "cmd.exe"
+			args = ["/c", "start", '""', url.replaceAll("&", "^&")]
 			break
 		default: // Linux and other POSIX-like systems
-			command = `xdg-open "${url}"`
+			command = `xdg-open`
+			args = [url]
 			break
 	}
 
-	exec(command, (error: ExecException | null) => {
-		if (error) {
-			console.error(`Error opening URL: ${error.message}`)
+	const childProcess: ChildProcess = spawn(command, args, { stdio: "inherit" })
+
+	childProcess.on("error", (error: Error) => {
+		console.error(`Error opening URL: ${error.message}`)
+	})
+
+	childProcess.on("close", (code: number | null) => {
+		if (code === null || code !== 0) {
+			console.error(`Error opening URL. Process exited with code ${code}`)
 			return
 		}
 
