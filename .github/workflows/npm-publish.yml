@@ -13,6 +13,11 @@ permissions:
   contents: read
 
 jobs:
+  call-security:
+    uses: vestfoldfylke/shared/.github/workflows/npm-security.yml@main
+    with:
+      audit_severity: "high" # required to be set. Can be one of (null, info, low, moderate, high, critical, none)
+      node_version: 22 # this one is optional and defaults to 22 if not set
   publish:
     runs-on: ubuntu-latest
     steps:
