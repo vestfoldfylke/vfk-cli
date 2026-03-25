@@ -4,7 +4,7 @@ import { openUrl } from "../lib/open-url.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getProjectInfo, getSemverReleaseType } from "../lib/semver.js"
-import type { RepoInfo } from "../types/git"
+import type { RepoInfo } from "../types/git.js"
 import type { ReleaseData } from "../types/tools.js"
 
 const toolHelp = `

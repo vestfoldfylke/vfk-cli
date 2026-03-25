@@ -7,8 +7,8 @@
 
 		// Environment Settings
 		// See also https://aka.ms/tsconfig/module
-		"module": "ESNext",
-		"target": "esnext",
+		"module": "NodeNext",
+		"target": "ESNext",
 		"lib": ["esnext"],
 		"types": ["node"],
 
@@ -32,8 +32,9 @@
 
 		// Recommended Options
 		"allowSyntheticDefaultImports": true,
-		"moduleResolution": "node",
+		"moduleResolution": "nodenext",
 		"strict": true,
+		"alwaysStrict": true,
 		"verbatimModuleSyntax": true,
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
