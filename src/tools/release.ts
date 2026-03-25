@@ -12,7 +12,6 @@ const toolHelp = `
 
   Usage:
     vfk release           Create a new GitHub release (and git tag)
-    vfk rel               Same as 'vfk release'
   
   Description:
     This tool helps you create a GitHub release (and git tag) for your project.

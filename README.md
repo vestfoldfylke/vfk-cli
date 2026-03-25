@@ -62,12 +62,11 @@ Steps performed:
 ### Usage
 ```bash
 vfk release
-vfk rel
 ```
 
 ## Development
 - Clone or fork repo
-- `npm i``
+- `npm i`
 - `npm link` This will make the `vfk` command point to your local project (uninstall @vestfoldfylke/vfk-cli first, if it does not work)
 - Test usage on some dummy repo from GitHub
 - Remember `npm run build` before testing the cli when you have made changes
