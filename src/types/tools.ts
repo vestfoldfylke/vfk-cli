@@ -18,3 +18,13 @@ export type ReleaseData = {
 	commits: GitLogCommit[] | null
 	releaseNotes: string | null
 }
+
+export type NilsReleaseData = {
+	semverType: SupportedSemverType
+	latestTag: string | null
+	projectInfo: ProjectInfo | null
+	releaseType: ReleaseType | null
+	nextVersion: NextVersion | null
+	commits: GitLogCommit[] | null
+	releaseNotes: string | null
+}
