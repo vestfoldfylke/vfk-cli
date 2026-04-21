@@ -59,9 +59,30 @@ Steps performed:
 - Generate release notes based on commits found
 - Create release draft link with title, description (release notes) and tag
 
+## vfk nilsrelease [patch|minor|major]
+Create a release with changelog based on conventional commits since last release.<br />
+Will update project version if needed, create a release draft on GitHub with changelog and tag the release commit.
+
+Steps performed:
+- Check current branch is default branch and that current branch is up-to-date with origin and has no uncommitted changes
+- Run tests to ensure code is working before creating release
+- Find latest version tag
+- Get and analyze commits since last release tag (if no tag found, will create initial release)
+    - If no commits found, will exit with error message
+    - If chosen pr type is lower than the highest type found in commits, will exit with error message
+- Determining new version based on chosen release type, commits found and latest version tag
+- Bump project version file(s) if needed
+  - Node.js: package.json, package-lock.json
+  - dotnet: *.csproj (the first one found that contains a <Version> tag)
+- Commit version bump and push to origin
+- Generate release notes based on commits found
+- Create release draft link with title, description (release notes) and tag
+
 ### Usage
 ```bash
-vfk release
+vfk nilsrelease patch
+vfk nilsrelease minor
+vfk nilsrelease major
 ```
 
 ## Development
