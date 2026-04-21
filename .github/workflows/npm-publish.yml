@@ -12,4 +12,7 @@ jobs:
   build-and-publish:
     if: github.event.release.target_commitish == 'main' # Only run this workflow if the release is created from the main branch
     uses: vestfoldfylke/shared/.github/workflows/publish-npm-package.yml@main
+    permissions:
+      id-token: write  # Required for OIDC (trusted publisher setup)
+      contents: read
     
