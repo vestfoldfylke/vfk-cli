@@ -6,32 +6,9 @@ name: Publish Node.js Package to NPM
 on:
   release:
     types: [published]
-    branches: [main]
-
-permissions:
-  id-token: write  # Required for OIDC
-  contents: read
 
 jobs:
-  call-security:
-    uses: vestfoldfylke/shared/.github/workflows/npm-security.yml@main
-    with:
-      audit_severity: "high" # required to be set. Can be one of (null, info, low, moderate, high, critical, none)
-      node_version: 22 # this one is optional and defaults to 22 if not set
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-
-      # Ensure npm 11.5.1 or later is installed
-      - name: Update npm
-        run: npm install -g npm@latest
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test
-      - run: npm publish
+  build-and-publish:
+    if: github.event.release.target_commitish == 'main' # Only run this workflow if the release is created from the main branch
+    uses: vestfoldfylke/shared/.github/workflows/publish-npm-package.yml@main
+    
