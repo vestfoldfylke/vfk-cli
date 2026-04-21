@@ -16,6 +16,9 @@ Supported project types:
 - Node.js (package.json, package-lock.json)
 - dotnet (*.csproj first one with <Version> tag)
 
+## Install
+`npm i @vestfoldfylke/vfk-cli -g`
+
 ## vfk pr [patch|minor|major]
 
 Create a pull request with a version bump and changelog based on conventional commits since last release.<br />
