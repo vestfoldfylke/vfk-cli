@@ -123,13 +123,26 @@ const commitSeparator = "%x00ENDOFCOMMIT%x00" // Nul-character as separator, as 
 const prettyFormat = `%h%x00%an%x00%ae%x00%s%x00%b%x00%ad${commitSeparator}`
 
 const prettyPropertyNamesInOrder: string[] = ["hash", "authorName", "authorEmail", "subject", "body", "commitDate"]
-const commitOutputSeparator = "\x00ENDOFCOMMIT\x00\n" // add newline after commit separator to also remove the newlines after each new commit line from git log
+const commitOutputSeparator = "\x00ENDOFCOMMIT\x00"
 const commitPropertySeparator = "\x00"
 
 export const parseGitLogs = (rawLog: string): GitLogCommit[] => {
+	// Windows wraps all lines in single quotes for some reason, remove them from the start and end of the entire log if they are present
+	if (rawLog.startsWith("'") && rawLog.endsWith("'")) {
+		rawLog = rawLog.slice(1, -1)
+	}
 	const commitEntries: string[] = rawLog.split(commitOutputSeparator).filter((entry) => entry.trim() !== "")
 
 	return commitEntries.map((entry: string) => {
+		// Windows
+		if (entry.startsWith("'\n'")) {
+			entry = entry.slice(3)
+		}
+		// UNIX
+		if (entry.startsWith("\n")) {
+			entry = entry.slice(1)
+		}
+
 		const properties: string[] = entry.split(commitPropertySeparator)
 		if (properties.length < prettyPropertyNamesInOrder.length) {
 			throw new Error("Pretty format and property names length mismatch, check prettyFormat and property names array (that they have same number of properties, and in same order)")

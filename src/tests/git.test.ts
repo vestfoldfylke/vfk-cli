@@ -3,20 +3,27 @@ import { describe, it } from "node:test"
 import { parseGitLogs, sortCommitsByType } from "../lib/git.js"
 import type { GitLogCommit, SortedCommits } from "../types/git.js"
 
-const rawLog = `commithash1\x00Franken Stein\x00franken.stein@smyger.no\x00Merge remote-tracking branch 'origin/main' into mordor\x00\x002025-11-03T14:13:00+01:00\x00ENDOFCOMMIT\x00
+const rawUnixLog = `commithash1\x00Franken Stein\x00franken.stein@smyger.no\x00Merge remote-tracking branch 'origin/main' into mordor\x00\x002025-11-03T14:13:00+01:00\x00ENDOFCOMMIT\x00
 commithash2\x00franky\x00franken.stein@smyger.no\x00En commit med body\x00Jeg er Franky!
 
 Hvordan går det ❤️\x002025-11-03T14:12:33+01:00\x00ENDOFCOMMIT\x00
-commithash3\x00Franken Stein\x00franken.stein@smyger.no\x00chore: bump version to 3.3.1\x00\x002025-10-29T13:06:56+01:00\x00ENDOFCOMMIT\x00
-`
+commithash3\x00Franken Stein\x00franken.stein@smyger.no\x00chore: bump version to 3.3.1\x00\x002025-10-29T13:06:56+01:00\x00ENDOFCOMMIT\x00`
+
+const rawWindowsLog = `'commithash1\x00Franken Stein\x00franken.stein@smyger.no\x00Merge remote-tracking branch 'origin/main' into mordor\x00\x002025-11-03T14:13:00+01:00\x00ENDOFCOMMIT\x00'
+'commithash2\x00franky\x00franken.stein@smyger.no\x00En commit med body\x00Jeg er Franky!
+
+Hvordan går det ❤️\x002025-11-03T14:12:33+01:00\x00ENDOFCOMMIT\x00'
+'commithash3\x00Franken Stein\x00franken.stein@smyger.no\x00chore: bump version to 3.3.1\x00\x002025-10-29T13:06:56+01:00\x00ENDOFCOMMIT\x00'`
 
 describe("parseGitLogs", () => {
-	it("should parse git logs into structured commits", () => {
-		const commits: GitLogCommit[] = parseGitLogs(rawLog)
+	it("should parse unix and windows git logs into structured commits", () => {
+		const unixCommits: GitLogCommit[] = parseGitLogs(rawUnixLog)
+		const windowsCommits: GitLogCommit[] = parseGitLogs(rawWindowsLog)
 
-		assert.strictEqual(commits.length, 3)
+		assert.strictEqual(unixCommits.length, 3)
+		assert.strictEqual(windowsCommits.length, 3)
 
-		assert.deepStrictEqual(commits[0], {
+		assert.deepStrictEqual(unixCommits[0], {
 			hash: "commithash1",
 			authorName: "Franken Stein",
 			authorEmail: "franken.stein@smyger.no",
@@ -24,7 +31,24 @@ describe("parseGitLogs", () => {
 			body: "",
 			commitDate: "2025-11-03T14:13:00+01:00"
 		})
-		assert.deepStrictEqual(commits[1], {
+		assert.deepStrictEqual(windowsCommits[0], {
+			hash: "commithash1",
+			authorName: "Franken Stein",
+			authorEmail: "franken.stein@smyger.no",
+			subject: "Merge remote-tracking branch 'origin/main' into mordor",
+			body: "",
+			commitDate: "2025-11-03T14:13:00+01:00"
+		})
+
+		assert.deepStrictEqual(unixCommits[1], {
+			hash: "commithash2",
+			authorName: "franky",
+			authorEmail: "franken.stein@smyger.no",
+			subject: "En commit med body",
+			body: "Jeg er Franky!\n\nHvordan går det ❤️",
+			commitDate: "2025-11-03T14:12:33+01:00"
+		})
+		assert.deepStrictEqual(windowsCommits[1], {
 			hash: "commithash2",
 			authorName: "franky",
 			authorEmail: "franken.stein@smyger.no",
@@ -33,7 +57,15 @@ describe("parseGitLogs", () => {
 			commitDate: "2025-11-03T14:12:33+01:00"
 		})
 
-		assert.deepStrictEqual(commits[2], {
+		assert.deepStrictEqual(unixCommits[2], {
+			hash: "commithash3",
+			authorName: "Franken Stein",
+			authorEmail: "franken.stein@smyger.no",
+			subject: "chore: bump version to 3.3.1",
+			body: "",
+			commitDate: "2025-10-29T13:06:56+01:00"
+		})
+		assert.deepStrictEqual(windowsCommits[2], {
 			hash: "commithash3",
 			authorName: "Franken Stein",
 			authorEmail: "franken.stein@smyger.no",
