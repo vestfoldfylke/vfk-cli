@@ -9,11 +9,11 @@ const usage = `vfk <command>
 
 Usage:
 
-vfk pr <type>      create a GitHub pull request of the specified type (patch, minor, major)
-vfk release        create a GitHub release with auto-release notes and tag from project version
-vfk nilsrelease    create a GitHub release with auto-release notes and tag from project version without creating a pull request (will update project version and push directly to main branch, use only if your name is Nils, or you like to live dangerously)
-vfk help           display this help message
-vfk --version      display the current version of VFK CLI
+vfk pr <type>      				create a GitHub pull request of the specified type (patch, minor, major)
+vfk release        				create a GitHub release with auto-release notes and tag from project version
+vfk nilsrelease <type>    create a GitHub release with auto-release notes and tag from project version without creating a pull request (will update project version and push directly to default branch, use only if your name is Nils, or you like to live dangerously)
+vfk help           				display this help message
+vfk --version      				display the current version of VFK CLI
 `
 
 type Tool = "--version" | "-v" | "release" | "pr" | "nilsrelease" | "help" | ""

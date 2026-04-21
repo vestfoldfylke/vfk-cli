@@ -11,7 +11,7 @@ const toolHelp = `
   VFK Release Tool
 
   Usage:
-    vfk nilsrelease patch     Create a patch release release (bug fixes) directly without a PR
+    vfk nilsrelease patch     Create a patch release (bug fixes) directly without a PR
     vfk nilsrelease minor     Create a minor release (new features) directly without a PR
     vfk nilsrelease major     Create a major release (breaking changes) directly without a PR
   
