@@ -21,98 +21,98 @@ const toolHelp = `
 `
 
 export const release = (...args: string[]): void => {
-	if (args[0] === "help") {
-		console.log(toolHelp)
-		process.exit(1)
-	}
+  if (args[0] === "help") {
+    console.log(toolHelp)
+    process.exit(1)
+  }
 
-	const repoInfo: RepoInfo = getRepoInfo()
-	// yocto-spinner og yocto-colors
-	let spinner: Spinner = yoctoSpinner({
-		text: "Checking if repo is clean and up-to-date..."
-	}).start()
-	try {
-		repoIsReadyForRelease(repoInfo)
-	} catch (error) {
-		spinner.error(`Repository is not ready for release: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success("Repository is clean and up-to-date")
+  const repoInfo: RepoInfo = getRepoInfo()
+  // yocto-spinner og yocto-colors
+  let spinner: Spinner = yoctoSpinner({
+    text: "Checking if repo is clean and up-to-date..."
+  }).start()
+  try {
+    repoIsReadyForRelease(repoInfo)
+  } catch (error) {
+    spinner.error(`Repository is not ready for release: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success("Repository is clean and up-to-date")
 
-	const releaseData: ReleaseData = {
-		latestTag: null,
-		projectInfo: null,
-		releaseType: null,
-		commits: null,
-		releaseNotes: null
-	}
+  const releaseData: ReleaseData = {
+    latestTag: null,
+    projectInfo: null,
+    releaseType: null,
+    commits: null,
+    releaseNotes: null
+  }
 
-	spinner = yoctoSpinner({ text: "Getting project info..." }).start()
-	try {
-		releaseData.projectInfo = getProjectInfo()
-	} catch (error) {
-		spinner.error(`Failed to get project info: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success(`Project version is ${releaseData.projectInfo.version} (${releaseData.projectInfo.type})`)
+  spinner = yoctoSpinner({ text: "Getting project info..." }).start()
+  try {
+    releaseData.projectInfo = getProjectInfo()
+  } catch (error) {
+    spinner.error(`Failed to get project info: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success(`Project version is ${releaseData.projectInfo.version} (${releaseData.projectInfo.type})`)
 
-	// Run tests before proceeding
-	spinner = yoctoSpinner({ text: "Running tests..." }).start()
-	try {
-		runTests(releaseData.projectInfo)
-	} catch (error) {
-		spinner.error(`Tests failed, please fix the errors before you create a release: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success("All tests passed")
+  // Run tests before proceeding
+  spinner = yoctoSpinner({ text: "Running tests..." }).start()
+  try {
+    runTests(releaseData.projectInfo)
+  } catch (error) {
+    spinner.error(`Tests failed, please fix the errors before you create a release: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success("All tests passed")
 
-	spinner = yoctoSpinner({ text: "Finding latest release tag..." }).start()
-	try {
-		releaseData.latestTag = getLatestReleaseTag()
-	} catch (error) {
-		spinner.error(`Failed to get latest release tag: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
+  spinner = yoctoSpinner({ text: "Finding latest release tag..." }).start()
+  try {
+    releaseData.latestTag = getLatestReleaseTag()
+  } catch (error) {
+    spinner.error(`Failed to get latest release tag: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
 
-	spinner.success(releaseData.latestTag ? `Latest release tag is ${releaseData.latestTag}` : "No release tags found, will use project version")
+  spinner.success(releaseData.latestTag ? `Latest release tag is ${releaseData.latestTag}` : "No release tags found, will use project version")
 
-	// Get commits since latest release tag (and check that there are commits)
-	spinner = yoctoSpinner({ text: releaseData.latestTag ? `Getting git log commits since latest release tag ${releaseData.latestTag}` : "No latest tag found, getting all commits" }).start()
-	try {
-		releaseData.commits = getCommitsSinceTag(releaseData.latestTag)
-		if (releaseData.commits.length === 0) {
-			spinner.error(`No commits found. Why do you want to create a release with no new changes??? 🍕`)
-			process.exit(1)
-		}
-	} catch (error) {
-		spinner.error(`Failed to get commits: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success(`Found ${releaseData.commits.length} commit(s) since latest tag ${releaseData.latestTag}`)
+  // Get commits since latest release tag (and check that there are commits)
+  spinner = yoctoSpinner({ text: releaseData.latestTag ? `Getting git log commits since latest release tag ${releaseData.latestTag}` : "No latest tag found, getting all commits" }).start()
+  try {
+    releaseData.commits = getCommitsSinceTag(releaseData.latestTag)
+    if (releaseData.commits.length === 0) {
+      spinner.error(`No commits found. Why do you want to create a release with no new changes??? 🍕`)
+      process.exit(1)
+    }
+  } catch (error) {
+    spinner.error(`Failed to get commits: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success(`Found ${releaseData.commits.length} commit(s) since latest tag ${releaseData.latestTag}`)
 
-	// Finn ut av hva slags semver type release vi skal lage basert på latestTag og project version
-	spinner = yoctoSpinner({ text: "Determining release type (semver) based on latest release tag and current project version..." }).start()
-	try {
-		releaseData.releaseType = getSemverReleaseType(releaseData.latestTag, releaseData.projectInfo)
-	} catch (error) {
-		spinner.error(`Failed to determine semver type: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success(`Determined release type (semver) is ${releaseData.releaseType}. Release-tag will be ${releaseData.projectInfo.version}`)
+  // Finn ut av hva slags semver type release vi skal lage basert på latestTag og project version
+  spinner = yoctoSpinner({ text: "Determining release type (semver) based on latest release tag and current project version..." }).start()
+  try {
+    releaseData.releaseType = getSemverReleaseType(releaseData.latestTag, releaseData.projectInfo)
+  } catch (error) {
+    spinner.error(`Failed to determine semver type: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success(`Determined release type (semver) is ${releaseData.releaseType}. Release-tag will be ${releaseData.projectInfo.version}`)
 
-	try {
-		releaseData.releaseNotes = generateReleaseNotes(releaseData)
-	} catch (error) {
-		spinner.error(`Failed to generate release notes: ${error instanceof Error ? error.message : String(error)}`)
-		process.exit(1)
-	}
-	spinner.success("Release notes generated")
+  try {
+    releaseData.releaseNotes = generateReleaseNotes(releaseData)
+  } catch (error) {
+    spinner.error(`Failed to generate release notes: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+  spinner.success("Release notes generated")
 
-	// Then we create a PR from a query link to GitHub with the right info filled in
-	const releaseTitle = `Release ${releaseData.projectInfo.version}`
-	const releaseBody: string = releaseData.releaseNotes
+  // Then we create a PR from a query link to GitHub with the right info filled in
+  const releaseTitle = `Release ${releaseData.projectInfo.version}`
+  const releaseBody: string = releaseData.releaseNotes
 
-	const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
+  const releaseLink = `${repoInfo.githubUrl}/releases/new?tag=${encodeURIComponent(releaseData.projectInfo.version)}&title=${encodeURIComponent(releaseTitle)}&body=${encodeURIComponent(releaseBody)}`
 
-	openUrl(releaseLink, "🚀 Create your release here if it did not open automatically")
+  openUrl(releaseLink, "🚀 Create your release here if it did not open automatically")
 }
