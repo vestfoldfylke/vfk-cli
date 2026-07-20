@@ -4,6 +4,7 @@ import { openUrl } from "../lib/open-url.js"
 import { runTests } from "../lib/run-tests.js"
 import { getNextVersion, getProjectInfo, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
 import type { GitCommitType, GitLogCommit, RepoInfo } from "../types/git.js"
+import type { ProjectInfo } from "../types/semver.js"
 import type { PullRequestData, SupportedSemverType } from "../types/tools.js"
 
 const toolHelp = `
@@ -152,17 +153,24 @@ export const pr = (...args: string[]): void => {
 
   // If project version is different from next version, update project version
   if (pullRequestData.projectInfo.version !== pullRequestData.nextVersion.version) {
+    let newProjectInfo: ProjectInfo
     spinner = yoctoSpinner({
       text: `Updating ${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} to ${pullRequestData.nextVersion.version}...`
     }).start()
     try {
       updateProjectVersion(pullRequestData.projectInfo, pullRequestData.nextVersion.version)
+
+      newProjectInfo = getProjectInfo()
+      if (pullRequestData.nextVersion.version !== newProjectInfo.version) {
+        // noinspection ExceptionCaughtLocallyJS
+        throw new Error("Project version was not bumped")
+      }
     } catch (error) {
       spinner.error(`Failed to update project version: ${error instanceof Error ? error.message : String(error)}`)
       process.exit(1)
     }
     spinner.success(
-      `${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated from ${pullRequestData.projectInfo.version} to ${pullRequestData.nextVersion.version}`
+      `${pullRequestData.projectInfo.type}-project version in ${pullRequestData.projectInfo.paths.join(" and ")} updated from ${pullRequestData.projectInfo.version} to ${newProjectInfo.version}`
     )
 
     spinner = yoctoSpinner({

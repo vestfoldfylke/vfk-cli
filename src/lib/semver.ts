@@ -1,5 +1,6 @@
 // @ts-check
 
+import { execSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import semver from "semver"
 import type { NextVersion, ProjectInfo, ReleaseType } from "../types/semver.js"
@@ -148,18 +149,16 @@ export const updateProjectVersion = (projectInfo: ProjectInfo, newVersion: strin
 
   switch (projectInfo.type) {
     case "node": {
-      for (const path of projectInfo.paths) {
-        // We do not parse JSON to preserve formatting yes
-        const content: string = readFileSync(path, "utf-8")
-        if (!projectInfo.name) {
-          throw new Error("Project name is required to update version.")
-        }
-
-        const newContent: string = content.replace(new RegExp(`("name": "${projectInfo.name}",\\s+"version": ")[^"]*(")`, "g"), (_: string, prefix: string, suffix: string): string => {
-          return `${prefix}${newVersion}${suffix}`
-        })
-        writeFileSync(path, newContent, "utf-8")
+      if (!projectInfo.name) {
+        throw new Error("Project name is required to update version.")
       }
+
+      // use builtin npm command to bump project version
+      execSync(`npm version ${newVersion} --no-git-tag-version`, {
+        timeout: 5000, // Maximum execution time in milliseconds
+        killSignal: "SIGKILL", // Forces termination if SIGTERM is ignored (Optional)
+        encoding: "utf8" // Returns output as string instead of Buffer
+      })
       break
     }
     case "dotnet": {

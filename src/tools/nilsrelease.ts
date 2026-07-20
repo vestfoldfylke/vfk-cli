@@ -5,6 +5,7 @@ import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
 import { getNextVersion, getProjectInfo, getSemverReleaseType, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
 import type { GitCommitType, RepoInfo } from "../types/git.js"
+import type { ProjectInfo } from "../types/semver.js"
 import type { NilsReleaseData, SupportedSemverType } from "../types/tools.js"
 
 const toolHelp = `
@@ -151,18 +152,23 @@ export const nilsrelease = (...args: string[]): void => {
 
   // If project version is different from next version, update project version
   if (releaseData.projectInfo.version !== releaseData.nextVersion.version) {
+    let newProjectInfo: ProjectInfo
     spinner = yoctoSpinner({
       text: `Updating ${releaseData.projectInfo.type}-project version in ${releaseData.projectInfo.paths.join(" and ")} to ${releaseData.nextVersion.version}...`
     }).start()
     try {
       updateProjectVersion(releaseData.projectInfo, releaseData.nextVersion.version)
+
+      newProjectInfo = getProjectInfo()
+      if (releaseData.nextVersion.version !== newProjectInfo.version) {
+        // noinspection ExceptionCaughtLocallyJS
+        throw new Error("Project version was not bumped")
+      }
     } catch (error) {
       spinner.error(`Failed to update project version: ${error instanceof Error ? error.message : String(error)}`)
       process.exit(1)
     }
-    spinner.success(
-      `${releaseData.projectInfo.type}-project version in ${releaseData.projectInfo.paths.join(" and ")} updated from ${releaseData.projectInfo.version} to ${releaseData.nextVersion.version}`
-    )
+    spinner.success(`${releaseData.projectInfo.type}-project version in ${releaseData.projectInfo.paths.join(" and ")} updated from ${releaseData.projectInfo.version} to ${newProjectInfo.version}`)
 
     spinner = yoctoSpinner({
       text: "Committing version update and pushing to remote :: "
