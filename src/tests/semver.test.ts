@@ -2,6 +2,7 @@ import assert from "node:assert"
 import { describe, it } from "node:test"
 import { getLatestSemverTag, getNextVersion, useExistingProjectVersion } from "../lib/semver.js"
 import type { NextVersion, ProjectInfo } from "../types/semver.js"
+import type { SupportedSemverType } from "../types/tools.js"
 
 describe("getLatestSemverTag", () => {
   it("should return the latest semver tag", () => {
@@ -72,24 +73,25 @@ describe("getNextVersion", () => {
     assert.strictEqual(nextVersion.isInitialRelease, false)
   })
 
-  it("should return 1.0.0 and mark as initial release if project version is 1.0.0 and no tags exist", () => {
-    const latestTag = null
-    const projectInfo: ProjectInfo = {
-      version: "1.0.0",
-      type: "node",
-      paths: ["./package.json"]
-    }
-    const releaseType = "minor"
+  for (const releaseType of ["patch", "minor", "major"]) {
+    it(`should return 1.0.0 and mark as initial release if project version is 1.0.0 and no tags exist when releaseType is '${releaseType}'`, () => {
+      const latestTag = null
+      const projectInfo: ProjectInfo = {
+        version: "1.0.0",
+        type: "node",
+        paths: ["./package.json"]
+      }
 
-    const nextVersion: NextVersion = getNextVersion(latestTag, projectInfo, releaseType)
-    assert.strictEqual(nextVersion.version, "1.0.0")
-    assert.strictEqual(nextVersion.source, "project")
-    assert.strictEqual(nextVersion.isInitialRelease, true)
-  })
+      const nextVersion: NextVersion = getNextVersion(latestTag, projectInfo, releaseType as SupportedSemverType)
+      assert.strictEqual(nextVersion.version, "1.0.0")
+      assert.strictEqual(nextVersion.source, "project")
+      assert.strictEqual(nextVersion.isInitialRelease, true)
+    })
+  }
 })
 
 describe("useExistingProjectVersion", () => {
-  it("should return true if project version has been already been increased one time with semver type from latest tag, and we also want to increase with the same semver type", () => {
+  it("should return true if project version has already been increased one time with semver type from latest tag, and we also want to increase with the same semver type", () => {
     const patch: boolean = useExistingProjectVersion("1.2.3", "1.2.4", "patch")
     assert.strictEqual(patch, true)
     const minor: boolean = useExistingProjectVersion("1.2.3", "1.3.0", "minor")
