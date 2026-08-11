@@ -1,28 +1,21 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
 
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
     "module": "NodeNext",
     "target": "ESNext",
     "lib": ["esnext"],
     "types": ["node"],
 
-    // Other Outputs
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
     "stripInternal": true,
 
-    // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
-    // Style Options
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
@@ -30,7 +23,6 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true,
 
-    // Recommended Options
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "nodenext",
     "strict": true,
@@ -42,7 +34,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
 
-    // Modules
     "resolveJsonModule": true
   },
   "exclude": ["node_modules", "dist"]
