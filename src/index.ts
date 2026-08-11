@@ -23,25 +23,25 @@ const selectedTool: Tool = (process.argv[2] as Tool) || ""
 const args: string[] = process.argv.slice(3)
 
 switch (selectedTool) {
-	case "--version":
-	case "-v":
-		console.log(pkg.version)
-		break
-	case "pr":
-		pr(...args)
-		break
-	case "release":
-		release(...args)
-		break
-	case "nilsrelease":
-		nilsrelease(...args)
-		break
-	case "help":
-		console.log(usage)
-		break
-	case "":
-		console.log(usage)
-		break
-	default:
-		throw new Error("SPECIFIED TOOL NOT FOUND")
+  case "--version":
+  case "-v":
+    console.log(pkg.version)
+    break
+  case "pr":
+    pr(...args)
+    break
+  case "release":
+    release(...args)
+    break
+  case "nilsrelease":
+    nilsrelease(...args)
+    break
+  case "help":
+    console.log(usage)
+    break
+  case "":
+    console.log(usage)
+    break
+  default:
+    throw new Error("SPECIFIED TOOL NOT FOUND")
 }
