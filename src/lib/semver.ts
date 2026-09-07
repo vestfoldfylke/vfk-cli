@@ -19,7 +19,11 @@ export const getLatestSemverTag = (tags: string[]): string | null => {
 }
 
 export const getProjectInfo = (): ProjectInfo => {
-  // Read project version from relevant file based on project type
+  // Read project version from relevant file based on project type.
+  // IF both package.json and *.csproj exists, the *.csproj will get precedence since it's the most likely project type if both exists!
+
+  let projectInfo: ProjectInfo | null = null
+
   // Node.js - package.json
   if (existsSync("./package.json")) {
     const pkg = JSON.parse(readFileSync("./package.json", "utf-8"))
@@ -32,7 +36,7 @@ export const getProjectInfo = (): ProjectInfo => {
       paths.push("./package-lock.json")
     }
 
-    return {
+    projectInfo = {
       version: pkg.version,
       type: "node",
       paths,
@@ -44,6 +48,11 @@ export const getProjectInfo = (): ProjectInfo => {
   const csProjFiles = readdirSync("./", { recursive: true }).filter((filename) => typeof filename === "string" && filename.endsWith(".csproj") && !filename.match(/\/bin\/|\/obj\//))
   if (!csProjFiles.every((file) => typeof file === "string")) {
     throw new Error("Error reading .csproj files, not all filenames are strings.")
+  }
+
+  if (projectInfo && csProjFiles.length === 0) {
+    // this is a Node.js project only
+    return projectInfo
   }
 
   if (csProjFiles.length > 0) {
@@ -76,6 +85,11 @@ export const getProjectInfo = (): ProjectInfo => {
       type: "dotnet",
       paths: [versions[0].path as string]
     }
+  }
+
+  if (projectInfo) {
+    // this is a Node.js project only
+    return projectInfo
   }
 
   // Add more project types as needed
