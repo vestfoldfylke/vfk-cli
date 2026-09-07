@@ -1,8 +1,11 @@
 import assert from "node:assert"
-import { describe, it } from "node:test"
-import { getLatestSemverTag, getNextVersion, useExistingProjectVersion } from "../lib/semver.js"
+import { afterEach, describe, it } from "node:test"
+import { getLatestSemverTag, getNextVersion, getProjectInfo, useExistingProjectVersion } from "../lib/semver.js"
 import type { NextVersion, ProjectInfo } from "../types/semver.js"
 import type { SupportedSemverType } from "../types/tools.js"
+
+const originalCwd: string = process.cwd()
+const testDataProjectFolder: string = "src/tests/data/projectinfo"
 
 describe("getLatestSemverTag", () => {
   it("should return the latest semver tag", () => {
@@ -88,6 +91,72 @@ describe("getNextVersion", () => {
       assert.strictEqual(nextVersion.isInitialRelease, true)
     })
   }
+})
+
+describe("getProjectInfo", () => {
+  afterEach(() => {
+    process.chdir(originalCwd)
+  })
+
+  it("should throw when neither a 'package.json' or a 'dotnet.csproj' file exists", () => {
+    process.chdir(`${originalCwd}/${testDataProjectFolder}`)
+
+    assert.throws(() => getProjectInfo())
+  })
+
+  it("should return ProjectInfo for Node.js when ONLY a 'package.json' file exists", () => {
+    process.chdir(`${originalCwd}/${testDataProjectFolder}/NodeOnly`)
+
+    let projectInfo: ProjectInfo | null = null
+
+    assert.doesNotThrow(() => {
+      projectInfo = getProjectInfo()
+    })
+
+    assert.equal(projectInfo !== null, true)
+    assert.equal((projectInfo as unknown as ProjectInfo).version, "1.2.3")
+    assert.equal((projectInfo as unknown as ProjectInfo).type, "node")
+    assert.equal(Array.isArray((projectInfo as unknown as ProjectInfo).paths), true)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths.length, 1)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths[0], "./package.json")
+    assert.equal((projectInfo as unknown as ProjectInfo).name, "node-only")
+  })
+
+  it("should return ProjectInfo for dotnet when ONLY a 'dotnet.csproj' file exists", () => {
+    process.chdir(`${originalCwd}/${testDataProjectFolder}/DotnetOnly`)
+
+    let projectInfo: ProjectInfo | null = null
+
+    assert.doesNotThrow(() => {
+      projectInfo = getProjectInfo()
+    })
+
+    assert.equal(projectInfo !== null, true)
+    assert.equal((projectInfo as unknown as ProjectInfo).version, "6.5.4")
+    assert.equal((projectInfo as unknown as ProjectInfo).type, "dotnet")
+    assert.equal(Array.isArray((projectInfo as unknown as ProjectInfo).paths), true)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths.length, 1)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths[0], "dotnet.csproj")
+    assert.equal((projectInfo as unknown as ProjectInfo).name, undefined)
+  })
+
+  it("should return ProjectInfo for dotnet when BOTH a 'package.json' and a 'dotnet.csproj' file exists", () => {
+    process.chdir(`${originalCwd}/${testDataProjectFolder}/DotnetAndNode`)
+
+    let projectInfo: ProjectInfo | null = null
+
+    assert.doesNotThrow(() => {
+      projectInfo = getProjectInfo()
+    })
+
+    assert.equal(projectInfo !== null, true)
+    assert.equal((projectInfo as unknown as ProjectInfo).version, "4.5.6")
+    assert.equal((projectInfo as unknown as ProjectInfo).type, "dotnet")
+    assert.equal(Array.isArray((projectInfo as unknown as ProjectInfo).paths), true)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths.length, 1)
+    assert.equal((projectInfo as unknown as ProjectInfo).paths[0], "dotnet.csproj")
+    assert.equal((projectInfo as unknown as ProjectInfo).name, undefined)
+  })
 })
 
 describe("useExistingProjectVersion", () => {
