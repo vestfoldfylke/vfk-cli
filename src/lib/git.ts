@@ -48,8 +48,7 @@ export const isRepoClean = (): boolean => {
   return status.includes("Your branch is up to date with ") && status.includes("nothing to commit, working tree clean")
 }
 
-export const getCommitsBehindAndAheadDefaultBranch = (): CommitsBehindAhead => {
-  const defaultBranch: string = getDefaultBranch()
+export const getCommitsBehindAndAheadDefaultBranch = (defaultBranch: string): CommitsBehindAhead => {
   const diff: string = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`)
   const [behind, ahead] = diff.split("\t")
   if (!behind || !ahead) {
@@ -99,7 +98,7 @@ export const getRepoInfo = (): RepoInfo => {
   const currentBranch: string = getCurrentBranch()
   const defaultBranch: string = getDefaultBranch()
   const repoIsClean: boolean = isRepoClean()
-  const commitDiff: CommitsBehindAhead = getCommitsBehindAndAheadDefaultBranch()
+  const commitDiff: CommitsBehindAhead = getCommitsBehindAndAheadDefaultBranch(defaultBranch)
 
   return {
     remoteUrl,
