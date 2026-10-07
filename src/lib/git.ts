@@ -67,9 +67,13 @@ export const repoIsReadyForPullRequest = (repoInfo: RepoInfo): void => {
     throw new Error("You are currently on the default branch. Please switch to a feature branch to create a PR.")
   }
   if (repoInfo.commitDiff.behind > 0) {
-    throw new Error(
-      `Your branch is behind the default branch by ${repoInfo.commitDiff.behind} commit(s). Please merge the default branch (git merge origin/${repoInfo.defaultBranch}) into your branch before creating a PR.`
-    )
+    try {
+      runGitCommand(`git merge-tree --write-tree --quiet origin/${repoInfo.defaultBranch} origin/${repoInfo.currentBranch}`)
+    } catch {
+      throw new Error(
+        `Your branch is behind the default branch by ${repoInfo.commitDiff.behind} commit(s) and will have merge conflicts merging this branch. Please merge the default branch (git merge origin/${repoInfo.defaultBranch}) into your branch and fix merge conflicts before creating a PR.`
+      )
+    }
   }
   if (!repoInfo.repoIsClean) {
     throw new Error("Please pull, commit and push, or stash your changes before creating a PR.")
