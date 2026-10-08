@@ -48,8 +48,7 @@ export const isRepoClean = (): boolean => {
   return status.includes("Your branch is up to date with ") && status.includes("nothing to commit, working tree clean")
 }
 
-export const getCommitsBehindAndAheadDefaultBranch = (): CommitsBehindAhead => {
-  const defaultBranch: string = getDefaultBranch()
+export const getCommitsBehindAndAheadDefaultBranch = (defaultBranch: string): CommitsBehindAhead => {
   const diff: string = runGitCommand(`git rev-list --left-right --count origin/${defaultBranch}...HEAD`)
   const [behind, ahead] = diff.split("\t")
   if (!behind || !ahead) {
@@ -68,9 +67,13 @@ export const repoIsReadyForPullRequest = (repoInfo: RepoInfo): void => {
     throw new Error("You are currently on the default branch. Please switch to a feature branch to create a PR.")
   }
   if (repoInfo.commitDiff.behind > 0) {
-    throw new Error(
-      `Your branch is behind the default branch by ${repoInfo.commitDiff.behind} commit(s). Please merge the default branch (git merge origin/${repoInfo.defaultBranch}) into your branch before creating a PR.`
-    )
+    try {
+      runGitCommand(`git merge-tree --write-tree --quiet origin/${repoInfo.defaultBranch} origin/${repoInfo.currentBranch}`)
+    } catch {
+      throw new Error(
+        `Your branch is behind the default branch by ${repoInfo.commitDiff.behind} commit(s) and will have merge conflicts merging this branch. Please merge the default branch (git merge origin/${repoInfo.defaultBranch}) into your branch and fix merge conflicts before creating a PR.`
+      )
+    }
   }
   if (!repoInfo.repoIsClean) {
     throw new Error("Please pull, commit and push, or stash your changes before creating a PR.")
@@ -99,7 +102,7 @@ export const getRepoInfo = (): RepoInfo => {
   const currentBranch: string = getCurrentBranch()
   const defaultBranch: string = getDefaultBranch()
   const repoIsClean: boolean = isRepoClean()
-  const commitDiff: CommitsBehindAhead = getCommitsBehindAndAheadDefaultBranch()
+  const commitDiff: CommitsBehindAhead = getCommitsBehindAndAheadDefaultBranch(defaultBranch)
 
   return {
     remoteUrl,

@@ -45,7 +45,7 @@ export const getProjectInfo = (): ProjectInfo => {
   }
 
   // .NET - .csproj
-  const csProjFiles = readdirSync("./", { recursive: true }).filter((filename) => typeof filename === "string" && filename.endsWith(".csproj") && !filename.match(/\/bin\/|\/obj\//))
+  const csProjFiles = readdirSync("./", { recursive: true }).filter((filename) => typeof filename === "string" && filename.endsWith(".csproj") && !filename.match(/\/bin\/|\/obj\/|\/tests\//)) // NOTE: /tests/ need to be present to be able to use this tool to create a PR for itself
   if (!csProjFiles.every((file) => typeof file === "string")) {
     throw new Error("Error reading .csproj files, not all filenames are strings.")
   }
