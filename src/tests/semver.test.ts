@@ -1,6 +1,14 @@
 import assert from "node:assert"
 import { afterEach, describe, it } from "node:test"
-import { getLatestSemverTag, getNextVersion, getProjectInfo, isRequestedSemverTypeTooHigh, isRequestedSemverTypeTooLow, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, useExistingProjectVersion } from "../lib/semver.js"
+import {
+  getLatestSemverTag,
+  getNextVersion,
+  getProjectInfo,
+  isRequestedSemverTypeTooHigh,
+  isRequestedSemverTypeTooLow,
+  SUPPORTED_SEMVER_TYPES_BY_PRIORITY,
+  useExistingProjectVersion
+} from "../lib/semver.js"
 import type { GitCommitType } from "../types/git.js"
 import type { NextVersion, ProjectInfo } from "../types/semver.js"
 import type { SupportedSemverType } from "../types/tools.js"
