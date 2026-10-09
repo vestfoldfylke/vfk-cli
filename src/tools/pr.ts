@@ -5,8 +5,8 @@ import { runTests } from "../lib/run-tests.js"
 import {
   getNextVersion,
   getProjectInfo,
-  isRequestedPrTypeTooHigh,
-  isRequestedPrTypeTooLow,
+  isRequestedSemverTypeTooHigh,
+  isRequestedSemverTypeTooLow,
   printCommitsByType,
   SUPPORTED_COMMIT_TYPES_BY_PRIORITY,
   SUPPORTED_SEMVER_TYPES_BY_PRIORITY,
@@ -110,7 +110,7 @@ export const pr = (...args: string[]): void => {
       process.exit(1)
     }
 
-    if (isRequestedPrTypeTooLow(pullRequestData.semverType, highestCommitType)) {
+    if (isRequestedSemverTypeTooLow(pullRequestData.semverType, highestCommitType)) {
       spinner.error(
         `The requested PR type "${pullRequestData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
       )
@@ -118,7 +118,7 @@ export const pr = (...args: string[]): void => {
       process.exit(1)
     }
 
-    if (isRequestedPrTypeTooHigh(pullRequestData.semverType, highestCommitType)) {
+    if (isRequestedSemverTypeTooHigh(pullRequestData.semverType, highestCommitType)) {
       spinner.error(
         `The requested PR type "${pullRequestData.semverType}" is higher than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a lower PR type.`
       )

@@ -213,18 +213,18 @@ export const getSemverReleaseType = (latestTag: string | null, projectInfo: Proj
   return semverType as ReleaseType
 }
 
-const getIsRequestedPrTypeIndexes = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): [number, number] => [
+const getIsRequestedSemverTypeIndexes = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): [number, number] => [
   SUPPORTED_COMMIT_TYPES_BY_PRIORITY.indexOf(requestedSemverType),
   SUPPORTED_COMMIT_TYPES_BY_PRIORITY.indexOf(highestCommitType)
 ]
 
-export const isRequestedPrTypeTooLow = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
-  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedPrTypeIndexes(requestedSemverType, highestCommitType)
+export const isRequestedSemverTypeTooLow = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
+  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedSemverTypeIndexes(requestedSemverType, highestCommitType)
   return highestCommitTypeIndex < requestedSemverTypeIndex
 }
 
-export const isRequestedPrTypeTooHigh = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
-  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedPrTypeIndexes(requestedSemverType, highestCommitType)
+export const isRequestedSemverTypeTooHigh = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
+  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedSemverTypeIndexes(requestedSemverType, highestCommitType)
   return requestedSemverTypeIndex < highestCommitTypeIndex
 }
 

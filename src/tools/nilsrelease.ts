@@ -7,8 +7,8 @@ import {
   getNextVersion,
   getProjectInfo,
   getSemverReleaseType,
-  isRequestedPrTypeTooHigh,
-  isRequestedPrTypeTooLow,
+  isRequestedSemverTypeTooHigh,
+  isRequestedSemverTypeTooLow,
   printCommitsByType,
   SUPPORTED_COMMIT_TYPES_BY_PRIORITY,
   SUPPORTED_SEMVER_TYPES_BY_PRIORITY,
@@ -116,7 +116,7 @@ export const nilsrelease = (...args: string[]): void => {
       process.exit(1)
     }
 
-    if (isRequestedPrTypeTooLow(releaseData.semverType, highestCommitType)) {
+    if (isRequestedSemverTypeTooLow(releaseData.semverType, highestCommitType)) {
       spinner.error(
         `The requested PR type "${releaseData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
       )
@@ -124,7 +124,7 @@ export const nilsrelease = (...args: string[]): void => {
       process.exit(1)
     }
 
-    if (isRequestedPrTypeTooHigh(releaseData.semverType, highestCommitType)) {
+    if (isRequestedSemverTypeTooHigh(releaseData.semverType, highestCommitType)) {
       spinner.error(
         `The requested PR type "${releaseData.semverType}" is higher than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a lower PR type.`
       )
