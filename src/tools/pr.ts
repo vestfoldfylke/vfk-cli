@@ -2,7 +2,16 @@ import yoctoSpinner, { type Spinner } from "yocto-spinner"
 import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
 import { openUrl } from "../lib/open-url.js"
 import { runTests } from "../lib/run-tests.js"
-import { getNextVersion, getProjectInfo, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
+import {
+  getNextVersion,
+  getProjectInfo,
+  isRequestedPrTypeTooHigh,
+  isRequestedPrTypeTooLow,
+  printCommitsByType,
+  SUPPORTED_COMMIT_TYPES_BY_PRIORITY,
+  SUPPORTED_SEMVER_TYPES_BY_PRIORITY,
+  updateProjectVersion
+} from "../lib/semver.js"
 import type { GitCommitType, GitLogCommit, RepoInfo } from "../types/git.js"
 import type { ProjectInfo } from "../types/semver.js"
 import type { PullRequestData, SupportedSemverType } from "../types/tools.js"
@@ -93,32 +102,30 @@ export const pr = (...args: string[]): void => {
     }
 
     // Determine the highest semver type present in the commits
-    const commitTypesByPriority: GitCommitType[] = [...SUPPORTED_SEMVER_TYPES_BY_PRIORITY, "maintenance", "other"]
-
-    const highestCommitType: GitCommitType | undefined = commitTypesByPriority.find((type: GitCommitType) => pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0)
+    const highestCommitType: GitCommitType | undefined = SUPPORTED_COMMIT_TYPES_BY_PRIORITY.find(
+      (type: GitCommitType) => pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0
+    )
     if (!highestCommitType) {
       spinner.error("No commit types found. Probably no commits at all, but we already checked that??? Contact idiot-developers.")
       process.exit(1)
     }
 
-    const requestedTypeIndex: number = commitTypesByPriority.indexOf(pullRequestData.semverType) // Lower index means higher priority
-    const highestTypeIndex: number = commitTypesByPriority.indexOf(highestCommitType)
-    if (highestTypeIndex < requestedTypeIndex) {
+    if (isRequestedPrTypeTooLow(pullRequestData.semverType, highestCommitType)) {
       spinner.error(
         `The requested PR type "${pullRequestData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
       )
-      // List the commits beautifully-ish in the terminal
-      console.log(`Commits by type:`)
-      for (const type of commitTypesByPriority) {
-        if (pullRequestData.sortedCommits?.[type] && pullRequestData.sortedCommits[type].length > 0) {
-          console.log(`\n${type.toUpperCase()} COMMITS:`)
-          for (const commit of pullRequestData.sortedCommits[type]) {
-            console.log(`- ${commit.subject} (${commit.hash})`)
-          }
-        }
-      }
+      printCommitsByType(pullRequestData.sortedCommits)
       process.exit(1)
     }
+
+    if (isRequestedPrTypeTooHigh(pullRequestData.semverType, highestCommitType)) {
+      spinner.error(
+        `The requested PR type "${pullRequestData.semverType}" is higher than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a lower PR type.`
+      )
+      printCommitsByType(pullRequestData.sortedCommits)
+      process.exit(1)
+    }
+
     // Check if there are commits that do not follow conventional commit types
     if (pullRequestData.sortedCommits.other.length > 0) {
       yoctoSpinner().start().warning(`There are ${pullRequestData.sortedCommits.other.length} commit(s) of type "other". Remember to prefix with conventional commit types for proper versioning.`)

@@ -1,6 +1,7 @@
 import assert from "node:assert"
 import { afterEach, describe, it } from "node:test"
-import { getLatestSemverTag, getNextVersion, getProjectInfo, useExistingProjectVersion } from "../lib/semver.js"
+import { getLatestSemverTag, getNextVersion, getProjectInfo, isRequestedPrTypeTooHigh, isRequestedPrTypeTooLow, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, useExistingProjectVersion } from "../lib/semver.js"
+import type { GitCommitType } from "../types/git.js"
 import type { NextVersion, ProjectInfo } from "../types/semver.js"
 import type { SupportedSemverType } from "../types/tools.js"
 
@@ -194,5 +195,49 @@ describe("useExistingProjectVersion", () => {
     assert.strictEqual(result1, false)
     const result2: boolean = useExistingProjectVersion("1.2.3", "also-not-a-version", "patch")
     assert.strictEqual(result2, false)
+  })
+})
+
+describe("isRequestedPrType", () => {
+  it("isRequestedPrTypeTooLow should return true when PR type is lower than the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(0) as SupportedSemverType // major
+
+    assert.strictEqual(isRequestedPrTypeTooLow(requestedSemverType, highestCommitType), true)
+  })
+
+  it("isRequestedPrTypeTooLow should return false when PR type is equal to the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+
+    assert.strictEqual(isRequestedPrTypeTooLow(requestedSemverType, highestCommitType), false)
+  })
+
+  it("isRequestedPrTypeTooLow should return false when PR type is higher than the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(1) as SupportedSemverType // minor
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+
+    assert.strictEqual(isRequestedPrTypeTooLow(requestedSemverType, highestCommitType), false)
+  })
+
+  it("isRequestedPrTypeTooHigh should return true when PR type is higher than the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(0) as SupportedSemverType // major
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+
+    assert.strictEqual(isRequestedPrTypeTooHigh(requestedSemverType, highestCommitType), true)
+  })
+
+  it("isRequestedPrTypeTooHigh should return false when PR type is equal to the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+
+    assert.strictEqual(isRequestedPrTypeTooHigh(requestedSemverType, highestCommitType), false)
+  })
+
+  it("isRequestedPrTypeTooHigh should return false when PR type is lower than the highest commit type commited", () => {
+    const requestedSemverType: SupportedSemverType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(2) as SupportedSemverType // patch
+    const highestCommitType: GitCommitType = SUPPORTED_SEMVER_TYPES_BY_PRIORITY.at(1) as SupportedSemverType // minor
+
+    assert.strictEqual(isRequestedPrTypeTooHigh(requestedSemverType, highestCommitType), false)
   })
 })
