@@ -84,7 +84,7 @@ export const pr = (...args: string[]): void => {
   }
   spinner.success("All tests passed")
 
-  // Get commits in current branch not in main/default branch - check that there are commits, and if semverType is present, check that it is not lower than the commit types
+  // Get commits in current branch not in main/default branch - check that there are commits, and if semverType is present, check that it is not lower or higher than the commit types
   spinner = yoctoSpinner({ text: `Getting commits in branch ${repoInfo.currentBranch} not in ${repoInfo.defaultBranch}...` }).start()
   try {
     const commitsInCurrentBranch: GitLogCommit[] = getBranchSpecificCommits(repoInfo.currentBranch)
