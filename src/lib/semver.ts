@@ -3,6 +3,7 @@
 import { execSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import semver from "semver"
+import type { GitCommitType, SortedCommits } from "../types/git.js"
 import type { NextVersion, ProjectInfo, ReleaseType } from "../types/semver.js"
 import type { SupportedSemverType } from "../types/tools.js"
 
@@ -12,6 +13,8 @@ type DotnetProjVersionInfo = {
 }
 
 export const SUPPORTED_SEMVER_TYPES_BY_PRIORITY: SupportedSemverType[] = ["major", "minor", "patch"]
+
+export const SUPPORTED_COMMIT_TYPES_BY_PRIORITY: GitCommitType[] = [...SUPPORTED_SEMVER_TYPES_BY_PRIORITY, "maintenance", "other"]
 
 export const getLatestSemverTag = (tags: string[]): string | null => {
   const semverTags: string[] = tags.filter((tag) => semver.valid(tag))
@@ -208,4 +211,34 @@ export const getSemverReleaseType = (latestTag: string | null, projectInfo: Proj
   }
 
   return semverType as ReleaseType
+}
+
+const getIsRequestedSemverTypeIndexes = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): [number, number] => [
+  SUPPORTED_COMMIT_TYPES_BY_PRIORITY.indexOf(requestedSemverType),
+  SUPPORTED_COMMIT_TYPES_BY_PRIORITY.indexOf(highestCommitType)
+]
+
+export const isRequestedSemverTypeTooLow = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
+  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedSemverTypeIndexes(requestedSemverType, highestCommitType)
+  return highestCommitTypeIndex < requestedSemverTypeIndex
+}
+
+export const isRequestedSemverTypeTooHigh = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
+  const [requestedSemverTypeIndex, highestCommitTypeIndex] = getIsRequestedSemverTypeIndexes(requestedSemverType, highestCommitType)
+  return requestedSemverTypeIndex < highestCommitTypeIndex
+}
+
+export const printCommitsByType: (sortedCommits: SortedCommits | null) => void = (sortedCommits: SortedCommits | null) => {
+  // List the commits beautifully-ish in the terminal
+  console.log(`Commits by type:`)
+  for (const type of SUPPORTED_COMMIT_TYPES_BY_PRIORITY) {
+    if (!(sortedCommits?.[type] && sortedCommits[type].length > 0)) {
+      continue
+    }
+
+    console.log(`\n${type.toUpperCase()} COMMITS:`)
+    for (const commit of sortedCommits[type]) {
+      console.log(`- ${commit.subject} (${commit.hash})`)
+    }
+  }
 }
