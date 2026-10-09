@@ -31,6 +31,7 @@ Steps performed:
 - Get and analyze commits since last release tag (if no tag found, will create initial release)
   - If no commits found, will exit with error message
   - If chosen pr type is lower than the highest type found in commits, will exit with error message
+  - If chosen pr type is higher than the highest type found in commits, will exit with error message
 - Find latest version tag
 - Determining new version based on chosen pr type, commits found and latest version tag
 - Bump project version file(s)
@@ -57,7 +58,7 @@ Steps performed:
 - Run tests to ensure code is working before creating release
 - Find latest version tag
 - Get and analyze commits since last release tag (if no tag found, will create initial release)
-    - If no commits found, will exit with error message
+  - If no commits found, will exit with error message
 - Determining new version based on latest version tag and project version
 - Generate release notes based on commits found
 - Create release draft link with title, description (release notes) and tag
@@ -71,8 +72,9 @@ Steps performed:
 - Run tests to ensure code is working before creating release
 - Find latest version tag
 - Get and analyze commits since last release tag (if no tag found, will create initial release)
-    - If no commits found, will exit with error message
-    - If chosen pr type is lower than the highest type found in commits, will exit with error message
+  - If no commits found, will exit with error message
+  - If chosen release type is lower than the highest type found in commits, will exit with error message
+  - If chosen release type is higher than the highest type found in commits, will exit with error message
 - Determining new version based on chosen release type, commits found and latest version tag
 - Bump project version file(s) if needed
   - Node.js: package.json, package-lock.json
