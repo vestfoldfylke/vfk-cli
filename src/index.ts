@@ -8,10 +8,7 @@ import { release } from "./tools/release.js"
 
 type Tool = "--version" | "-v" | "release" | "pr" | "nilsrelease" | "help" | ""
 
-const selectedTool: Tool = (process.argv[2] as Tool) || ""
-const tools: Tool[] = ["release", "pr", "nilsrelease"]
-
-const startUpdateExists: Promise<string> = tools.includes(selectedTool) && process.stdout.isTTY ? checkUpdateExists(pkg.name, pkg.version) : Promise.resolve("")
+const startUpdateExists: Promise<string> = process.stdout.isTTY ? checkUpdateExists(pkg.name, pkg.version) : Promise.resolve("")
 
 const usage = `vfk <command>
 
@@ -23,6 +20,8 @@ vfk nilsrelease <type>    create a GitHub release with auto-release notes and ta
 vfk help           				display this help message
 vfk --version      				display the current version of VFK CLI
 `
+
+const selectedTool: Tool = (process.argv[2] as Tool) || ""
 
 const args: string[] = process.argv.slice(3)
 
