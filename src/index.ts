@@ -9,8 +9,6 @@ import type { Update } from "./types/update.js"
 
 type Tool = "--version" | "-v" | "release" | "pr" | "nilsrelease" | "help" | ""
 
-const startUpdateExists: Promise<Update> = process.stdout.isTTY ? checkUpdateExists(pkg.name, pkg.version) : Promise.resolve({ message: "", success: true })
-
 const usage = `vfk <command>
 
 Usage:
@@ -51,10 +49,10 @@ try {
       throw new Error("SPECIFIED TOOL NOT FOUND")
   }
 } finally {
-  const updateExists: Update = await startUpdateExists
+  const updateExists: Update = process.stdout.isTTY ? await checkUpdateExists(pkg.name, pkg.version) : { message: "", success: true }
   if (updateExists.message !== "") {
     const stream = updateExists.success ? process.stdout : process.stderr
     const color: number = updateExists.success ? 33 : 31 // NOTE: 33 = Yellow, 31 = Red, 0 = Reset
-    stream.write(`\n\u001b[${color}m${updateExists.message}\u001b[0m`)
+    stream.write(`\n\u001b[${color}m${updateExists.message}\u001b[0m\n`)
   }
 }
