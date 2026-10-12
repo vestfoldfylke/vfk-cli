@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from "node:child_process"
+import { spawnSync } from "node:child_process"
 
 export const openUrl = (url: string, message: string = ""): void => {
   let command: string
@@ -21,19 +21,14 @@ export const openUrl = (url: string, message: string = ""): void => {
       break
   }
 
-  const childProcess: ChildProcess = spawn(command, args, { stdio: "inherit" })
+  const result = spawnSync(command, args, { stdio: "inherit" })
 
-  childProcess.on("error", (error: Error) => {
-    console.error(`Error opening URL: ${error.message}`)
-  })
+  if (result.error) {
+    console.error(`Error opening URL: ${result.error.message}`)
+  } else if (result.status !== 0) {
+    console.error(`Error opening URL. Process exited with code ${result.status}`)
+  }
 
-  childProcess.on("close", (code: number | null) => {
-    if (code === null || code !== 0) {
-      console.error(`Error opening URL. Process exited with code ${code}`)
-      return
-    }
-
-    const messageStr: string = message.length > 0 ? `${message}: ` : ""
-    console.log(`${messageStr}${url}`)
-  })
+  const messageStr: string = message.length > 0 ? `${message}: ` : ""
+  console.log(`${messageStr}${url}`)
 }
