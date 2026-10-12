@@ -220,13 +220,16 @@ export const sortCommitsByType = (commits: GitLogCommit[]): SortedCommits => {
     maintenance: [],
     other: []
   }
+
   for (const commit of commits) {
     const type: GitCommitType = getCommitType(commit.subject)
     sorted[type].push(commit)
   }
+
   // Sort all arrays by commit date descending
   for (const key of Object.keys(sorted) as (keyof SortedCommits)[]) {
-    sorted[key] = sorted[key].sort((a: GitLogCommit, b: GitLogCommit) => b.commitDate.localeCompare(a.commitDate))
+    sorted[key] = sorted[key].sort((a: GitLogCommit, b: GitLogCommit) => a.commitDate.localeCompare(b.commitDate))
   }
+
   return sorted
 }
