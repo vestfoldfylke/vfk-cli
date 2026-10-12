@@ -9,6 +9,13 @@ import type { Update } from "./types/update.js"
 
 type Tool = "--version" | "-v" | "release" | "pr" | "nilsrelease" | "help" | ""
 
+const updateExists: Update = process.stdout.isTTY ? await checkUpdateExists(pkg.name, pkg.version) : { message: "", success: true }
+if (updateExists.message !== "") {
+  const stream = updateExists.success ? process.stdout : process.stderr
+  const color: number = updateExists.success ? 33 : 31 // NOTE: 33 = Yellow, 31 = Red, 0 = Reset
+  stream.write(`\u001b[${color}m${updateExists.message}\u001b[0m\n\n`)
+}
+
 const usage = `vfk <command>
 
 Usage:
@@ -24,35 +31,26 @@ const selectedTool: Tool = (process.argv[2] as Tool) || ""
 
 const args: string[] = process.argv.slice(3)
 
-try {
-  switch (selectedTool) {
-    case "--version":
-    case "-v":
-      console.log(pkg.version)
-      break
-    case "pr":
-      pr(...args)
-      break
-    case "release":
-      release(...args)
-      break
-    case "nilsrelease":
-      nilsrelease(...args)
-      break
-    case "help":
-      console.log(usage)
-      break
-    case "":
-      console.log(usage)
-      break
-    default:
-      throw new Error("SPECIFIED TOOL NOT FOUND")
-  }
-} finally {
-  const updateExists: Update = process.stdout.isTTY ? await checkUpdateExists(pkg.name, pkg.version) : { message: "", success: true }
-  if (updateExists.message !== "") {
-    const stream = updateExists.success ? process.stdout : process.stderr
-    const color: number = updateExists.success ? 33 : 31 // NOTE: 33 = Yellow, 31 = Red, 0 = Reset
-    stream.write(`\n\u001b[${color}m${updateExists.message}\u001b[0m\n`)
-  }
+switch (selectedTool) {
+  case "--version":
+  case "-v":
+    console.log(pkg.version)
+    break
+  case "pr":
+    pr(...args)
+    break
+  case "release":
+    release(...args)
+    break
+  case "nilsrelease":
+    nilsrelease(...args)
+    break
+  case "help":
+    console.log(usage)
+    break
+  case "":
+    console.log(usage)
+    break
+  default:
+    throw new Error("SPECIFIED TOOL NOT FOUND")
 }
