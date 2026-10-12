@@ -3,7 +3,17 @@ import { commitAndPush, conventionalCommitTypes, getCommitsSinceTag, getLatestRe
 import { openUrl } from "../lib/open-url.js"
 import { generateReleaseNotes } from "../lib/release-notes.js"
 import { runTests } from "../lib/run-tests.js"
-import { getNextVersion, getProjectInfo, getSemverReleaseType, SUPPORTED_SEMVER_TYPES_BY_PRIORITY, updateProjectVersion } from "../lib/semver.js"
+import {
+  getNextVersion,
+  getProjectInfo,
+  getSemverReleaseType,
+  isRequestedSemverTypeTooHigh,
+  isRequestedSemverTypeTooLow,
+  printCommitsByType,
+  SUPPORTED_COMMIT_TYPES_BY_PRIORITY,
+  SUPPORTED_SEMVER_TYPES_BY_PRIORITY,
+  updateProjectVersion
+} from "../lib/semver.js"
 import type { GitCommitType, RepoInfo } from "../types/git.js"
 import type { ProjectInfo } from "../types/semver.js"
 import type { NilsReleaseData, SupportedSemverType } from "../types/tools.js"
@@ -100,30 +110,25 @@ export const nilsrelease = (...args: string[]): void => {
     }
 
     // Determine the highest semver type present in the commits
-    const commitTypesByPriority: GitCommitType[] = [...SUPPORTED_SEMVER_TYPES_BY_PRIORITY, "maintenance", "other"]
-
-    const highestCommitType: GitCommitType | undefined = commitTypesByPriority.find((type: GitCommitType) => sortedCommits?.[type] && sortedCommits[type].length > 0)
+    const highestCommitType: GitCommitType | undefined = SUPPORTED_COMMIT_TYPES_BY_PRIORITY.find((type: GitCommitType) => sortedCommits?.[type] && sortedCommits[type].length > 0)
     if (!highestCommitType) {
       spinner.error("No commit types found. Probably no commits at all, but we already checked that??? Contact idiot-developers.")
       process.exit(1)
     }
 
-    const requestedTypeIndex: number = commitTypesByPriority.indexOf(releaseData.semverType) // Lower index means higher priority
-    const highestTypeIndex: number = commitTypesByPriority.indexOf(highestCommitType)
-    if (highestTypeIndex < requestedTypeIndex) {
+    if (isRequestedSemverTypeTooLow(releaseData.semverType, highestCommitType)) {
       spinner.error(
-        `The requested PR type "${releaseData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher PR type.`
+        `The requested Release type "${releaseData.semverType}" is lower than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a higher Release type.`
       )
-      // List the commits beautifully-ish in the terminal
-      console.log(`Commits by type:`)
-      for (const type of commitTypesByPriority) {
-        if (sortedCommits?.[type] && sortedCommits[type].length > 0) {
-          console.log(`\n${type.toUpperCase()} COMMITS:`)
-          for (const commit of sortedCommits[type]) {
-            console.log(`- ${commit.subject} (${commit.hash})`)
-          }
-        }
-      }
+      printCommitsByType(sortedCommits)
+      process.exit(1)
+    }
+
+    if (isRequestedSemverTypeTooHigh(releaseData.semverType, highestCommitType)) {
+      spinner.error(
+        `The requested Release type "${releaseData.semverType}" is higher than the highest commit type "${highestCommitType}" in the branch. Please review your commits and choose a lower Release type.`
+      )
+      printCommitsByType(sortedCommits)
       process.exit(1)
     }
 
