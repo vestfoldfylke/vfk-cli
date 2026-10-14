@@ -224,6 +224,10 @@ export const isRequestedSemverTypeTooLow = (requestedSemverType: SupportedSemver
 }
 
 export const isRequestedSemverTypeTooHigh = (requestedSemverType: SupportedSemverType, highestCommitType: GitCommitType): boolean => {
+  if (["maintenance", "other"].includes(highestCommitType)) {
+    return false
+  }
+
   const [requestedSemverTypeIndex, highestCommitTypeIndex] = getRequestedSemverTypeIndexes(requestedSemverType, highestCommitType)
   return requestedSemverTypeIndex < highestCommitTypeIndex
 }
