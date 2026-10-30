@@ -1,5 +1,6 @@
 import yoctoSpinner, { type Spinner } from "yocto-spinner"
 import { commitAndPush, conventionalCommitTypes, getBranchSpecificCommits, getLatestReleaseTag, getRepoInfo, repoIsReadyForPullRequest, sortCommitsByType } from "../lib/git.js"
+import { isDotnetSolutionRoot } from "../lib/is-dotnet-solution-root.js"
 import { openUrl } from "../lib/open-url.js"
 import { runTests } from "../lib/run-tests.js"
 import {
@@ -72,6 +73,21 @@ export const pr = (...args: string[]): void => {
     process.exit(1)
   }
   spinner.success(`Project version is ${pullRequestData.projectInfo.version} (${pullRequestData.projectInfo.type})`)
+
+  if (pullRequestData.projectInfo.type === "dotnet") {
+    spinner = yoctoSpinner({ text: "Checking if present working directory is solution root..." }).start()
+    try {
+      if (!isDotnetSolutionRoot()) {
+        spinner.error(`Dotnet solution not found in present working directory '${process.cwd()}', please make sure you are in solution root before you create a PR`)
+        process.exit(1)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      spinner.error(`Checking present working directory failed, please make sure you are in solution root before you create a PR: ${errorMessage}`)
+      process.exit(1)
+    }
+    spinner.success("Dotnet solution found")
+  }
 
   // Run tests before proceeding
   spinner = yoctoSpinner({ text: "Running tests..." }).start()
